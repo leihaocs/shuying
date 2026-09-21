@@ -1,0 +1,41 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# 平台构建产物
+android/.gradle/
+android/local.properties
+android/app/debug/
+android/app/profile/
+android/app/release/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ohos/build/
+ohos/.hvigor/
+ohos/local.properties
+ohos/oh_modules/
+
+# 签名与密钥：绝对不要提交，也绝对不要丢
+**/*.jks
+**/*.keystore
+**/*.p12
+**/*.mobileprovision
+**/*.cer
+**/key.properties
+**/signing.properties
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# macOS
+.DS_Store
+
+# 干扰分析的文件
+*.log

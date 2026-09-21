@@ -1,0 +1,27 @@
+name: shuying
+description: 书影 · 记录每一本书的阅读轨迹与每一部电影的观影轨迹
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 状态管理（纯 Dart，三端通用）
+  provider: ^6.1.2
+
+  # 本地持久化。
+  # 鸿蒙端需要对应的 shared_preferences ohos 实现，
+  # 若 pub get 报错，请参考 README「鸿蒙适配」一节添加 dependency_overrides。
+  shared_preferences: ^2.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
