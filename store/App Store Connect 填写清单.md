@@ -9,7 +9,7 @@ Bundle ID：`com.bookmovie.revisit.app`　版本：`1.0.0`（build 1）
 
 - [ ] Apple Developer Program 已付费生效（¥688/年）
 - [ ] Xcode 已登录该账号并 Download Manual Profiles
-- [ ] 隐私政策 URL 已可公网访问：`https://______/privacy.html`
+- [x] 隐私政策 URL 已可公网访问：`https://leihaocs.github.io/shuying/privacy.html`
       （下方所有需要填的 URL，在拿到之前先留空，最后统一补）
 
 ---
@@ -49,7 +49,7 @@ App Store Connect → 我的 App → `+` → 新建 App
 |---|---|
 | 类别 - 主要 | 图书 |
 | 类别 - 次要 | 效率（或「工具」） |
-| 隐私政策 URL | `https://______/privacy.html` |
+| 隐私政策 URL | `https://leihaocs.github.io/shuying/privacy.html` |
 | 版权 | `2026 leihao` |
 | 年龄分级 | 点「编辑」→ 见下方问卷 |
 
@@ -115,7 +115,7 @@ App Store Connect → 我的 App → `+` → 新建 App
 | 促销文本（可选） | `重读不再覆盖历史，每一次阅读与观影都留痕。` |
 | 描述 | 见下方 |
 | 关键词 | 见下方 |
-| 技术支持 URL | `https://______/privacy.html`（或项目主页） |
+| 技术支持 URL | `https://github.com/leihaocs/shuying`（Issues 作支持入口） |
 | 营销 URL | 可留空 |
 | 隐私政策 URL | 同第 3 节 |
 | 截图 | 上传 `store/screenshots/ios-6.9/` 下 4 张（1320×2868，符合要求） |
