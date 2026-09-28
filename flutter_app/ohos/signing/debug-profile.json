@@ -1,0 +1,32 @@
+{
+    "version-name": "2.0.0",
+    "version-code": 2,
+    "uuid": "fe686e1b-3770-4824-a938-961b140a7c98",
+    "validity": {
+        "not-before": 1610519532,
+        "not-after": 1936689532
+    },
+    "type": "debug",
+    "bundle-info": {
+        "developer-id": "OpenHarmony",
+        "development-certificate": "-----BEGIN CERTIFICATE-----\nMIICSTCCAc6gAwIBAgIEPg9dDjAKBggqhkjOPQQDAjBjMQswCQYDVQQGEwJDTjEU\nMBIGA1UECgwLT3Blbkhhcm1vbnkxGTAXBgNVBAsMEE9wZW5IYXJtb255IFRlYW0x\nIzAhBgNVBAMMGk9wZW5IYXJtb255IEFwcGxpY2F0aW9uIENBMB4XDTI2MDkyMTIz\nMjMxM1oXDTM2MDkxODIzMjMxM1owaDELMAkGA1UEBhMCQ04xFDASBgNVBAoMC09w\nZW5IYXJtb255MRkwFwYDVQQLDBBPcGVuSGFybW9ueSBUZWFtMSgwJgYDVQQDDB9P\ncGVuSGFybW9ueSBBcHBsaWNhdGlvbiBSZWxlYXNlMFkwEwYHKoZIzj0CAQYIKoZI\nzj0DAQcDQgAErdmR3Lbqcw5N7KmPuS2lTPYhPzEM1XNsZKlDI/HW0fFjIIfnoE3P\nlS7u9kGIp7bqK8tKxOhM0NtdBLJ6p9CqwKNrMGkwHQYDVR0OBBYEFJ87Y7wORStp\nWuajaTCKeJIHxQ1NMAkGA1UdEwQCMAAwDgYDVR0PAQH/BAQDAgeAMBMGA1UdJQQM\nMAoGCCsGAQUFBwMDMBgGDCsGAQQBj1sCgngBAwQIMAYCAQEKAQAwCgYIKoZIzj0E\nAwIDaQAwZgIxAIE56iDZ0oUSs+iTtZfwWYlzaLqutefM8xpZzj4h17Rr14calRrm\nUv3PI1o0KIffrAIxAJ7geO+Ef42GZ3xGCrUlGJNbNbp38g16M6jbCzpsqTx0kWjC\n6HbdkR/ADNsRRl0H1w==\n-----END CERTIFICATE-----\n",
+        "bundle-name": "com.bookmovie.revisit.app",
+        "apl": "normal",
+        "app-feature": "hos_normal_app"
+    },
+    "acls": {
+        "allowed-acls": [
+            ""
+        ]
+    },
+    "permissions": {
+        "restricted-permissions": [
+            ""
+        ]
+    },
+    "debug-info": {
+        "device-ids": [],
+        "device-id-type": "udid"
+    },
+    "issuer": "pki_internal"
+}

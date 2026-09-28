@@ -36,12 +36,18 @@ BookStatus bookStatus(Book book) {
   return book.rounds.isEmpty ? BookStatus.want : BookStatus.finished;
 }
 
-String statusLabel(Book book) => switch (bookStatus(book)) {
-      BookStatus.want => '想读',
-      BookStatus.reading => '在读',
-      BookStatus.rereading => '再次阅读',
-      BookStatus.finished => '已读${book.rounds.length}次',
-    };
+String statusLabel(Book book) {
+  switch (bookStatus(book)) {
+    case BookStatus.want:
+      return '想读';
+    case BookStatus.reading:
+      return '在读';
+    case BookStatus.rereading:
+      return '再次阅读';
+    case BookStatus.finished:
+      return '已读${book.rounds.length}次';
+  }
+}
 
 int roundPages(ReadingRound round) =>
     round.logs.fold(0, (sum, l) => sum + (l.pages ?? 0));

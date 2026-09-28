@@ -121,6 +121,15 @@ EOF
 
 keys_dir="$HOME/keys"
 jks="${jks_arg:-$keys_dir/${alias_name}-release.jks}"
+
+# 真实密钥位置以 android/key.properties 为准（文件名可能与模板名不同）
+if [ -z "$jks_arg" ] && [ -f android/key.properties ]; then
+  kp_jks="$(sed -n 's/^storeFile=//p' android/key.properties | tail -1)"
+  if [ -n "$kp_jks" ] && [ -f "$kp_jks" ]; then
+    jks="$kp_jks"
+    keys_dir="$(dirname "$kp_jks")"
+  fi
+fi
 reg_md5="$(reg_value MD5)"
 reg_sha1="$(reg_value SHA1)"
 reg_sha256="$(reg_value SHA256)"

@@ -1,0 +1,41 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "material": {
+          "certpath": "signing/shuying-app-cert-chain.cer",
+          "storePassword": "00000016f5816445702c61142e091c6870715f2cfbe0bf06e4142667618385d2713fc9f3fc8b",
+          "keyAlias": "shuying-app-key",
+          "keyPassword": "00000016b7992737df3379706be3d854347d8d1811777297304719cfc41d9a10419040bf091d",
+          "profile": "signing/shuying-debug.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "signing/shuying-app.p12"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "compileSdkVersion": 15,
+        "compatibleSdkVersion": 15,
+        "runtimeOS": "OpenHarmony"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}
