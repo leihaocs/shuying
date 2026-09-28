@@ -1,0 +1,9 @@
+# 跨平台行尾约定（双机 Windows ⇄ macOS 协作用）
+
+# shell 脚本在任何机器上都必须以 LF 检出。
+# 否则在 macOS / Git Bash 上执行会报：
+#   bad interpreter: /bin/bash^M (No such file or directory)
+*.sh text eol=lf
+
+# PowerShell 脚本只在 Windows 上跑，用 CRLF 更稳妥
+*.ps1 text eol=crlf
