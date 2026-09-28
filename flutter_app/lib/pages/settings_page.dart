@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../store/app_store.dart';
@@ -6,6 +7,35 @@ import '../theme/app_theme.dart';
 import '../widgets/bits.dart';
 import '../widgets/sheets.dart';
 import 'privacy_policy_page.dart';
+
+/* ------------------------------------------------------------------ */
+/* 版本信息                                                            */
+/* ------------------------------------------------------------------ */
+
+/// 已缓存的版本 Future，避免每次 rebuild 都重新发起异步调用。
+Future<String>? _versionFuture;
+
+/// 读取 App 真实版本号，显示为「版本名 (构建号)」，如 `1.0.0 (1)`。
+///
+/// 数据来源是 `pubspec.yaml` 的 `version` —— Flutter 打包时会把它写进
+/// 各平台的 versionName / CFBundleShortVersionString / versionCode。
+/// 因此**改版本只需改 pubspec.yaml 一行**，本页不会再显示过期的写死值。
+///
+/// 个别平台（如尚未提供 ohos 实现的鸿蒙）取不到包信息时返回 `—`，
+/// 不打断页面渲染。
+Future<String> _appVersion() {
+  _versionFuture ??= _readVersion();
+  return _versionFuture!;
+}
+
+Future<String> _readVersion() async {
+  try {
+    final info = await PackageInfo.fromPlatform();
+    return '${info.version} (${info.buildNumber})';
+  } catch (_) {
+    return '—';
+  }
+}
 
 /// 「设置 / 关于」页。
 ///
@@ -26,12 +56,12 @@ class SettingsPage extends StatelessWidget {
       backgroundColor: c.bg,
       body: Column(
         children: [
-          NavBar(title: '设置'),
+          const NavBar(title: '设置'),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: [
-                _SectionHeader('外观'),
+                const _SectionHeader('外观'),
                 CardBox(
                   child: _TapRow(
                     icon: store.themeMode == ThemeMode.dark
@@ -47,7 +77,7 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
 
-                _SectionHeader('隐私'),
+                const _SectionHeader('隐私'),
                 CardBox(
                   padding: EdgeInsets.zero,
                   child: Column(
@@ -81,7 +111,7 @@ class SettingsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 18),
 
-                _SectionHeader('数据'),
+                const _SectionHeader('数据'),
                 CardBox(
                   padding: EdgeInsets.zero,
                   child: _TapRow(
@@ -103,15 +133,23 @@ class SettingsPage extends StatelessWidget {
                 ),
 
                 const SizedBox(height: 24),
-                _SectionHeader('关于'),
+                const _SectionHeader('关于'),
                 CardBox(
                   child: Column(
                     children: [
-                      _InfoRow(label: '应用名称', value: '书影'),
+                      const _InfoRow(label: '应用名称', value: '书影温故'),
                       const SizedBox(height: 8),
-                      _InfoRow(label: '版本', value: '1.0.0 (1)'),
+                      const _InfoRow(label: '英文名称', value: 'Reel & Read'),
                       const SizedBox(height: 8),
-                      _InfoRow(
+                      FutureBuilder<String>(
+                        future: _appVersion(),
+                        builder: (context, snap) => _InfoRow(
+                          label: '版本',
+                          value: snap.data ?? '—',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const _InfoRow(
                         label: '隐私政策版本',
                         value: PrivacyPolicyPage.version,
                       ),
@@ -138,7 +176,7 @@ class SettingsPage extends StatelessWidget {
       context,
       title: '撤回隐私政策同意？',
       message:
-          '撤回后下次启动书影会再次显示隐私政策，需要你重新同意才能继续使用。'
+          '撤回后下次启动书影温故会再次显示隐私政策，需要你重新同意才能继续使用。'
           '本操作不会清空你的阅读 / 观影记录。',
       confirmText: '撤回同意',
     );

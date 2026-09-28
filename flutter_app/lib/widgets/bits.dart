@@ -1,4 +1,3 @@
-import 'dart:ui' show FontFeature;
 
 import 'package:flutter/material.dart';
 
@@ -562,10 +561,10 @@ class BookCover extends StatelessWidget {
         borderRadius: BorderRadius.circular(radius),
         boxShadow: shadow
             ? [
-                BoxShadow(
-                  color: const Color(0x552B2622),
+                const BoxShadow(
+                  color: Color(0x552B2622),
                   blurRadius: 26,
-                  offset: const Offset(0, 10),
+                  offset: Offset(0, 10),
                   spreadRadius: -14,
                 ),
               ]

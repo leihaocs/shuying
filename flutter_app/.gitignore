@@ -1,41 +1,76 @@
-# Flutter / Dart
-.dart_tool/
-.packages
-build/
-.flutter-plugins
-.flutter-plugins-dependencies
-
-# 平台构建产物
-android/.gradle/
-android/local.properties
-android/app/debug/
-android/app/profile/
-android/app/release/
-ios/Pods/
-ios/.symlinks/
-ios/Flutter/Flutter.framework
-ios/Flutter/Flutter.podspec
-ohos/build/
-ohos/.hvigor/
-ohos/local.properties
-ohos/oh_modules/
-
-# 签名与密钥：绝对不要提交，也绝对不要丢
-**/*.jks
-**/*.keystore
-**/*.p12
-**/*.mobileprovision
-**/*.cer
-**/key.properties
-**/signing.properties
-
-# IDE
-.idea/
-.vscode/
-*.iml
-
-# macOS
-.DS_Store
-
-# 干扰分析的文件
+# Miscellaneous
+*.class
 *.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Widget Preview related
+.widget_preview/
+
+# Flutter SDK 版本标记（记录创建时的 Flutter SDK 版本，跨 Windows/macOS 会冲突；本项目按机器各自生成）
+.metadata
+
+# Windows 端专用执行清单（Mac 上无意义，本机专用，不入 git）
+/docs/Windows执行清单.md
+
+# ── 签名与密钥（绝不能提交，含密码/私钥）─────────────────────────
+# Android：key.properties 里有 storePassword/keyPassword 明文
+/android/key.properties
+/android/*.jks
+/android/*.keystore
+*.jks
+*.keystore
+
+# iOS：证书、描述文件、Xcode 个人配置
+/ios/Runner.xcworkspace/xcuserdata/
+/ios/**/*.mobileprovision
+/ios/**/*.p12
+/ios/**/*.cer
+/ios/Flutter/Generated.xcconfig
+/ios/Podfile.lock
+
+# HarmonyOS：签名证书与 Profile
+/ohos/**/*.p12
+/ohos/**/*.cer
+/ohos/**/*.p7b
+/ohos/**/signingConfigs.json

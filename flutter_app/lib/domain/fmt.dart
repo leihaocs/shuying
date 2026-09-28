@@ -1,4 +1,5 @@
 /// 格式化与解析工具（对应原 Web 版的 lib/utils.ts）。
+library;
 
 String _pad(int n) => n < 10 ? '0$n' : '$n';
 

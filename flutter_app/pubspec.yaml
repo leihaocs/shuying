@@ -1,5 +1,5 @@
 name: shuying
-description: 书影 · 记录每一本书的阅读轨迹与每一部电影的观影轨迹
+description: 书影温故 · 记录每一本书的阅读轨迹与每一部电影的观影轨迹
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -9,6 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # 读取 App 版本号（设置页「关于」用，避免版本号写死两处不同步）。
+  # 鸿蒙端若 pub get 报错，参考 README「鸿蒙适配」一节添加 dependency_overrides。
+  package_info_plus: ^10.2.1
 
   # 状态管理（纯 Dart，三端通用）
   provider: ^6.1.2
