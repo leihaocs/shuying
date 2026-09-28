@@ -30,14 +30,14 @@ class PrivacyConsentGate extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
               child: Row(
                 children: [
-                  Text('🔒', style: const TextStyle(fontSize: 22)),
+                  const Text('🔒', style: TextStyle(fontSize: 22)),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '欢迎使用书影',
+                          '欢迎使用书影温故',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -125,7 +125,7 @@ class PrivacyConsentGate extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '退出书影？',
+                    '退出书影温故？',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -134,7 +134,7 @@ class PrivacyConsentGate extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '你可以稍后再次打开书影，届时仍会看到这份隐私政策。'
+                    '你可以稍后再次打开书影温故，届时仍会看到这份隐私政策。'
                     'iOS 用户请手动从主屏幕上划关闭 App。',
                     style: TextStyle(
                       fontSize: 13.5,

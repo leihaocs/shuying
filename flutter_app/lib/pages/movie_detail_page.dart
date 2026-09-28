@@ -23,11 +23,11 @@ class MovieDetailPage extends StatelessWidget {
     if (movie == null) {
       return Scaffold(
         backgroundColor: c.bg,
-        body: SafeArea(
+        body: const SafeArea(
           child: Column(
             children: [
               NavBar(title: '电影'),
-              const Expanded(
+              Expanded(
                 child: EmptyState(icon: '🗑️', title: '这部电影已经不在片单里了'),
               ),
             ],
@@ -105,7 +105,7 @@ class MovieDetailPage extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 22),
-                  SectionTitle('统计'),
+                  const SectionTitle('统计'),
                   StatGrid(
                     cells: [
                       StatCell(
@@ -126,7 +126,7 @@ class MovieDetailPage extends StatelessWidget {
                   ),
                   if (movie.note != null) ...[
                     const SizedBox(height: 22),
-                    SectionTitle('备注'),
+                    const SectionTitle('备注'),
                     CardBox(
                       padding: const EdgeInsets.all(14),
                       child: Text(
@@ -172,7 +172,7 @@ class MovieDetailPage extends StatelessWidget {
                       ],
                     ),
                   const SizedBox(height: 24),
-                  SectionTitle('电影信息'),
+                  const SectionTitle('电影信息'),
                   CardBox(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 2),

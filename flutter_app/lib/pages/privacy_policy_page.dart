@@ -32,7 +32,7 @@ class PrivacyPolicyPage extends StatelessWidget {
       backgroundColor: c.bg,
       body: Column(
         children: [
-          NavBar(title: '隐私政策'),
+          const NavBar(title: '隐私政策'),
           Expanded(child: body),
         ],
       ),
@@ -57,10 +57,10 @@ class _PrivacyPolicyBody extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text('🔒', style: const TextStyle(fontSize: 22)),
+                    const Text('🔒', style: TextStyle(fontSize: 22)),
                     const SizedBox(width: 8),
                     Text(
-                      '书影 · 隐私政策',
+                      '书影温故 · 隐私政策',
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
@@ -77,7 +77,7 @@ class _PrivacyPolicyBody extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  '我们非常重视你的隐私。这份政策用通俗的语言告诉你：书影会采集什么、不采集什么、你的数据存在哪里、以及你能怎么做。',
+                  '我们非常重视你的隐私。这份政策用通俗的语言告诉你：书影温故会采集什么、不采集什么、你的数据存在哪里、以及你能怎么做。',
                   style: TextStyle(
                     fontSize: 13.5,
                     color: c.text2,
@@ -89,11 +89,11 @@ class _PrivacyPolicyBody extends StatelessWidget {
           ),
           const SizedBox(height: 22),
 
-          _Section(
+          const _Section(
             title: '1. 我们不采集你的数据',
-            children: const [
+            children: [
               _P(
-                '书影不会上传你的任何数据到服务器。整本书的阅读记录、电影观影记录、评分、备注，全部只保存在你这台设备的本地数据库中。',
+                '书影温故不会上传你的任何数据到服务器。整本书的阅读记录、电影观影记录、评分、备注，全部只保存在你这台设备的本地数据库中。',
               ),
               _P(
                 '开发者也无法远程读取你的数据，因为我们根本没有你的数据。',
@@ -101,11 +101,11 @@ class _PrivacyPolicyBody extends StatelessWidget {
             ],
           ),
 
-          _Section(
+          const _Section(
             title: '2. 我们不申请网络权限',
-            children: const [
+            children: [
               _P(
-                '书影默认不连接互联网。Android / iOS / 鸿蒙三端的安装包都不包含任何网络请求，也不会在后台悄悄访问网络。',
+                '书影温故默认不连接互联网。Android / iOS / 鸿蒙三端的安装包都不包含任何网络请求，也不会在后台悄悄访问网络。',
               ),
               _P(
                 '如果未来加入云同步等联网功能，我们会在更新前再次提示并征求你的同意。',
@@ -113,13 +113,13 @@ class _PrivacyPolicyBody extends StatelessWidget {
             ],
           ),
 
-          _Section(
+          const _Section(
             title: '3. 我们不接入第三方 SDK',
-            children: const [
+            children: [
               _P(
-                '书影不嵌入统计 SDK、推送 SDK、广告 SDK 或任何第三方组件。'
+                '书影温故不嵌入统计 SDK、推送 SDK、广告 SDK 或任何第三方组件。'
                 '应用商店要求的「应用内隐私声明」中所列项，'
-                '涉及「设备信息 / 标识符 / 位置 / 通讯录 / 相机 / 麦克风」等，书影均不收集。',
+                '涉及「设备信息 / 标识符 / 位置 / 通讯录 / 相机 / 麦克风」等，书影温故均不收集。',
               ),
               _P(
                 '因此不会出现「第三方共享」「个性化广告」「自动化决策」等情形。',
@@ -127,9 +127,9 @@ class _PrivacyPolicyBody extends StatelessWidget {
             ],
           ),
 
-          _Section(
+          const _Section(
             title: '4. 你的数据存在哪里',
-            children: const [
+            children: [
               _P(
                 '所有阅读 / 观影记录保存在设备本地的 SharedPreferences / Keychain / 沙盒目录中，'
                 '与系统其他 App 完全隔离，操作系统权限会阻止其他 App 读取。',
@@ -140,11 +140,11 @@ class _PrivacyPolicyBody extends StatelessWidget {
             ],
           ),
 
-          _Section(
+          const _Section(
             title: '5. 你能做的事',
-            children: const [
+            children: [
               _P(
-                '查看与修改：你随时可以在书影的「设置」页面访问本政策。',
+                '查看与修改：你随时可以在书影温故的「设置」页面访问本政策。',
               ),
               _P(
                 '清空数据：你可以在「设置 → 清空所有数据」中删除全部本地记录。',
@@ -155,47 +155,47 @@ class _PrivacyPolicyBody extends StatelessWidget {
             ],
           ),
 
-          _Section(
+          const _Section(
             title: '6. 权限说明',
-            children: const [
+            children: [
               _P(
-                '书影仅申请实现核心功能所必需的权限。如果你认为某项权限被多余地使用，欢迎写信告诉我们。',
+                '书影温故仅申请实现核心功能所必需的权限。如果你认为某项权限被多余地使用，欢迎写信告诉我们。',
               ),
               _Bullet('通知权限（可选）：用于提醒你「今天还没读书」。拒绝后仍可正常使用 App。'),
               _Bullet('存储权限（可选）：仅在你导出 / 备份数据时使用。拒绝后仅影响备份功能。'),
             ],
           ),
 
-          _Section(
+          const _Section(
             title: '7. 儿童隐私',
-            children: const [
+            children: [
               _P(
-                '书影不针对 14 岁以下儿童设计，也不会主动收集儿童信息。若你为孩子代为使用，请协助其阅读并理解本政策。',
+                '书影温故不针对 14 岁以下儿童设计，也不会主动收集儿童信息。若你为孩子代为使用，请协助其阅读并理解本政策。',
               ),
             ],
           ),
 
-          _Section(
+          const _Section(
             title: '8. 政策更新',
-            children: const [
+            children: [
               _P(
                 '本政策可能随版本更新而修订。版本号会标注在页面顶部，更新生效后会再次弹出首次启动同意页，请你重新确认。',
               ),
             ],
           ),
 
-          _Section(
+          const _Section(
             title: '9. 联系我们',
-            children: const [
+            children: [
               _P('如果你对隐私政策有任何疑问或反馈，欢迎联系我们：'),
-              _Bullet('邮箱：privacy@shuying.app（占位，请在上架前替换为真实邮箱）'),
+              _Bullet('邮箱：380174722@qq.com'),
             ],
           ),
 
           const SizedBox(height: 12),
           Center(
             child: Text(
-              '— 书影团队',
+              '— 书影温故团队',
               style: TextStyle(fontSize: 12, color: c.text3),
             ),
           ),

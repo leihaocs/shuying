@@ -24,7 +24,7 @@ class ShuYingApp extends StatelessWidget {
     final themeMode = context.select<AppStore, ThemeMode>((s) => s.themeMode);
 
     return MaterialApp(
-      title: '书影',
+      title: '书影温故',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
@@ -73,7 +73,7 @@ class _SplashScreen extends StatelessWidget {
             const Text('📖', style: TextStyle(fontSize: 56)),
             const SizedBox(height: 12),
             Text(
-              '书影',
+              '书影温故',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.w700,

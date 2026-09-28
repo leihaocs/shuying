@@ -692,7 +692,7 @@ class _LogFormState extends State<_LogForm> {
                         const Spacer(),
                         Switch.adaptive(
                           value: _useProgress,
-                          activeColor: c.accent,
+                          activeTrackColor: c.accent,
                           onChanged: (v) => setState(() => _useProgress = v),
                         ),
                       ],

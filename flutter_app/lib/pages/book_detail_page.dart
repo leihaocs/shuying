@@ -24,11 +24,11 @@ class BookDetailPage extends StatelessWidget {
     if (book == null) {
       return Scaffold(
         backgroundColor: c.bg,
-        body: SafeArea(
+        body: const SafeArea(
           child: Column(
             children: [
               NavBar(title: '书籍'),
-              const Expanded(
+              Expanded(
                 child: EmptyState(icon: '🗑️', title: '这本书已经不在书架上了'),
               ),
             ],
@@ -135,7 +135,7 @@ class BookDetailPage extends StatelessWidget {
                       ),
                   ],
                   const SizedBox(height: 24),
-                  SectionTitle('书籍信息'),
+                  const SectionTitle('书籍信息'),
                   CardBox(
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 2),
@@ -520,7 +520,7 @@ class _LogTimeline extends StatelessWidget {
                                       if (l.pages == null &&
                                           l.minutes == null &&
                                           l.progress == null)
-                                        _How('（仅备注）'),
+                                        const _How('（仅备注）'),
                                     ],
                                   ),
                                   if (l.note != null) ...[
