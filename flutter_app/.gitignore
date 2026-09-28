@@ -44,6 +44,11 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Android：机器相关的本地配置（sdk.dir 是绝对路径，Windows 与 macOS 不同）
+# 不忽略的话，Mac 生成 android/ 提交后，Windows 拉下来路径对不上，构建会失败。
+/android/local.properties
+/android/.gradle/
+
 # Widget Preview related
 .widget_preview/
 
