@@ -44,8 +44,15 @@ fi
 echo "==> Flutter 版本"
 flutter --version
 
-# pubspec.yaml 里已经写好了依赖，这里先备份，避免被模板覆盖
+# pubspec.yaml 里已经写好了依赖，这里先备份，避免被模板覆盖。
+# 注意：flutter create --overwrite 会覆盖 lib/、test/、README.md 等，
+# 一并备份，生成平台工程后再恢复。
 cp pubspec.yaml pubspec.yaml.bak
+cp -R lib lib.bak
+cp -R test test.bak 2>/dev/null || true
+cp analysis_options.yaml analysis_options.yaml.bak
+cp README.md README.md.bak
+cp .gitignore .gitignore.bak
 
 # 中途失败也把 pubspec 还原回来
 restore_pubspec() {
@@ -73,8 +80,13 @@ flutter create --platforms="$PLATFORMS" \
   --overwrite \
   .
 
-# 恢复我们自己的 pubspec（模板可能会改写依赖版本）
+# 恢复我们自己的代码与配置（模板会覆盖 lib/、test/、README.md 等）
 mv pubspec.yaml.bak pubspec.yaml
+rm -rf lib && mv lib.bak lib
+rm -rf test && mv test.bak test
+mv analysis_options.yaml.bak analysis_options.yaml
+mv README.md.bak README.md
+mv .gitignore.bak .gitignore
 
 echo "==> 拉取依赖"
 flutter pub get

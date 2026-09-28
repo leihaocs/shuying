@@ -22,6 +22,42 @@ class _DayBar {
   final bool isToday;
 }
 
+/// 阅读记录行（统计页聚合用）
+class _ReadingLogRow {
+  const _ReadingLogRow({
+    required this.at,
+    this.minutes,
+    this.pages,
+    this.progress,
+    required this.bookId,
+    required this.title,
+    required this.cover,
+  });
+
+  final DateTime at;
+  final int? minutes;
+  final int? pages;
+  final int? progress;
+  final String bookId;
+  final String title;
+  final String cover;
+}
+
+/// 观影记录行（统计页聚合用）
+class _WatchRow {
+  const _WatchRow({
+    required this.at,
+    this.rating,
+    required this.movieId,
+    required this.title,
+  });
+
+  final DateTime at;
+  final int? rating;
+  final String movieId;
+  final String title;
+}
+
 class _Activity {
   const _Activity({
     required this.isRead,
@@ -50,8 +86,7 @@ class StatsPage extends StatelessWidget {
     var minutes = 0;
     var pages = 0;
     var readTimes = 0;
-    final allLogs = <({DateTime at, int? minutes, int? pages, int? progress,
-        String bookId, String title, String cover})>[];
+    final allLogs = <_ReadingLogRow>[];
 
     for (final b in store.books) {
       readTimes += bl.bookSummary(b).readTimes;
@@ -59,7 +94,7 @@ class StatsPage extends StatelessWidget {
         for (final l in r.logs) {
           minutes += l.minutes ?? 0;
           pages += l.pages ?? 0;
-          allLogs.add((
+          allLogs.add(_ReadingLogRow(
             at: l.at,
             minutes: l.minutes,
             pages: l.pages,
@@ -73,12 +108,11 @@ class StatsPage extends StatelessWidget {
     }
 
     var watchTimes = 0;
-    final allWatches = <({DateTime at, int? rating, String movieId,
-        String title})>[];
+    final allWatches = <_WatchRow>[];
     for (final m in store.movies) {
       watchTimes += m.watches.length;
       for (final w in m.watches) {
-        allWatches.add((
+        allWatches.add(_WatchRow(
           at: w.at,
           rating: w.rating,
           movieId: m.id,

@@ -263,22 +263,42 @@ flutter build hap --release          # 输出到 ohos/entry/build/default/output
 
 ## 六、iOS 打包
 
+### 首次：在 Xcode 登录 Apple ID（只需一次）
+
+`ipa` 需要签名证书，本机钥匙串里没有证书时任何命令行打包都会失败，所以首次必须走一次 Xcode 交互：
+
+1. 打开 Xcode → `Settings（⌘,）` → `Accounts` → 左下角 `+` → `Apple ID` → 登录 `leihaocs@gmail.com`
+2. 选中刚添加的账号 → 右下角 `Manage Certificates…` → `+` → `Apple Development`
+   （若账号已加入付费开发者计划，再加一个 `Apple Distribution`）
+3. `open ios/Runner.xcworkspace` → 选中 `Runner` Target → `Signing & Capabilities`
+   → 勾选 `Automatically manage signing` → Team 选上面的账号
+   → Bundle Identifier 保持 `com.bookmovie.revisit.app`
+   → 工程已把 Team 固化进 `project.pbxproj`（`DEVELOPMENT_TEAM = Y25KP5S862`），若以后换账号请重新设置
+4. 回到终端执行下面的命令
+
+> 免费账号（Personal Team）不能上架 App Store，只能导出 development 包，且导出前必须先用 USB 或 Wi-Fi
+> 连上一台 iPhone 完成设备注册（付费开发者账号无此限制）。
+
+### 之后：一键签名出包
+
 ```bash
-cd flutter_app
-flutter build ipa --release
+./tool/ios_ipa.sh              # 自动探测证书：有 Distribution 走 app-store，否则 development
+./tool/ios_ipa.sh app-store    # 强制 App Store 分发（需付费开发者账号）
+./tool/ios_ipa.sh development  # 免费账号也能用，产出供本机/内测设备安装的 IPA
 ```
 
-或图形化：
+脚本会自动：列出钥匙串中的签名证书 → 判定导出方式 → 从证书的 OU 字段提取 Team ID
+→ 生成 `ios/ExportOptions.plist` → `flutter build ipa --release`。
+产物：`build/ios/ipa/书影温故.ipa`。
 
-```bash
-open ios/Runner.xcworkspace
-```
+### 图形化上架
 
-1. 选中 `Runner` Target → `Signing & Capabilities`
-2. 勾选 `Automatically manage signing`，Team 选你的 Apple 开发者账号
-3. Bundle Identifier 改成你的唯一 ID（与包名一致）
-4. `Product → Archive` → `Distribute App` → `App Store Connect` → `Upload`
-5. 到 [App Store Connect](https://appstoreconnect.apple.com) 填资料、提交审核
+`Product → Archive` → `Distribute App` → `App Store Connect` → `Upload`，
+再到 [App Store Connect](https://appstoreconnect.apple.com) 填资料、提交审核。
+
+> 无签名证书时也能先出归档备用：
+> `xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath build/ios/Runner.xcarchive CODE_SIGNING_ALLOWED=NO`
+> 之后在 Xcode → `Window → Organizer` 里选中该归档，登录后 `Distribute App` 重签导出。
 
 ---
 
@@ -288,6 +308,27 @@ open ios/Runner.xcworkspace
 > [`docs/三端开发者注册与上架执行流程.md`](docs/三端开发者注册与上架执行流程.md)；
 > **软著材料排版、备案表单字段、隐私政策全文**见
 > [`docs/上架前置资质与备案指引.md`](docs/上架前置资质与备案指引.md)。
+### 第 0 步之前：一键构建三端 Release
+
+日常出包直接跑脚本即可，无需记上面四、五、六节的命令：
+
+```bash
+./tool/release.sh            # 三端全量
+./tool/release.sh android    # APK + AAB
+./tool/release.sh ios        # IPA（需 Xcode 已登录开发者账号）
+./tool/release.sh ohos       # HAP
+```
+
+产物：
+
+| 端 | 产物 |
+|---|---|
+| Android | `build/app/outputs/flutter-apk/app-release.apk`、`build/app/outputs/bundle/release/app-release.aab` |
+| iOS | `build/ios/ipa/书影温故.ipa` |
+| HarmonyOS | `ohos/entry/build/default/outputs/default/entry-default-signed.hap` |
+
+> iOS 首次出包必须先手工做一次：Xcode → Settings → Accounts 添加 Apple ID，
+> 再打开 `ios/Runner.xcworkspace` 把 Runner target 的 Team 选上。之后脚本就能自动签名。
 
 ### 第 0 步：中国大陆的硬性前置资质（三端都要）
 
@@ -298,6 +339,24 @@ open ios/Runner.xcworkspace
 | **隐私政策 URL** | 必须能公网访问。本 App 只在本机存储数据、不联网上传，写起来很简单 | 免费 |
 
 备案号形如 `粤ICP备xxxxxxxx号-1A`，**App Store 中国区、华为应用市场、国内安卓市场都要填**。
+
+### 第 0.5 步：上架截图
+
+已写好一键截图脚本，基于 iPhone 17 Pro Max（6.9"）模拟器自动生成 6.9" / 6.5" / Android 9:16 / 鸿蒙 9:16 四组尺寸：
+
+```bash
+cd flutter_app
+./tool/generate_screenshots.sh
+```
+
+截图会用 `SHUYING_SCREENSHOT=true` + `SHUYING_TAB=n` 跳过隐私门并直达指定 Tab，
+输出到 `store/screenshots/`。需要安装 Pillow：
+
+```bash
+pip3 install Pillow
+```
+
+> 脚本会把模拟器状态栏统一为 09:41、满电、满信号。iPad / 平板截图或细节页截图暂时需要手动补拍。
 
 隐私政策最小可用模板（托管到 GitHub Pages / 任意静态站即可）：
 
@@ -370,6 +429,10 @@ open ios/Runner.xcworkspace
 | 现象 | 原因 / 解决 |
 |---|---|
 | iOS 构建报 `Podfile` 错误 | `cd ios && pod install --repo-update` |
+| iOS `xcodebuild` 报 `Found no destinations` / `iOS 26.0 is not installed` | Xcode 的 iOS 平台组件没装全（`Xcode.app/.../iPhoneOS.platform/DeviceSupport` 里没有对应版本）。Xcode → Settings → Components 安装 iOS 26.0，或重装 Xcode |
+| iOS `xcodebuild archive` 报 `The sandbox is not in sync with the Podfile.lock` | `ios/Pods/Manifest.lock` 缺失，先 `cd ios && pod install` |
+| iOS `flutter build ipa` 报「No signing certificate」 | 钥匙串无证书，按第六节在 Xcode 登录 Apple ID 并生成证书 |
+| 只想出归档、暂不签名 | archive 时加 `CODE_SIGNING_ALLOWED=NO CODE_SIGN_IDENTITY=""` |
 | Android 报 `minSdkVersion` 冲突 | 在 `android/app/build.gradle.kts` 提高 `minSdk` 到 23+ |
 | 鸿蒙运行报 `MissingPluginException` | 插件缺 ohos 实现，见第五节第 3 点 |
 | 应用市场驳回「缺少备案」 | 先把备案办下来，没有捷径 |
@@ -377,6 +440,13 @@ open ios/Runner.xcworkspace
 | 在已有工程重跑 `flutter create --overwrite` 导致文件被覆盖 | 从 git 恢复，或生成到临时目录再拷贝平台目录 |
 | `flutter create` 后 `main.dart` 变成计数器 Demo | 同上，`--overwrite` 会覆盖已有文件 |
 | 数据丢失 | 数据在本机，卸载即清除。后续如需云同步，改 `app_store.dart` 即可接入 |
+| 鸿蒙分支 `flutter pub get` 报 `requires your app to be migrated to the Android embedding v2` | 鸿蒙 Flutter（3.7.12）只识别 Groovy 的 `android/build.gradle`，本项目用的是 `build.gradle.kts`，于是把 App 误判成 embedding v1。已用根目录 `android/AndroidManifest.xml`（声明 `flutterEmbedding=2`）绕过，别删 |
+| Android `compileRelease` 报 `cannot find symbol class Registrar` | `shared_preferences_android` 2.2.x 还引用已移除的 v1 embedding。已改为使用鸿蒙 fork 的本地副本并删除 `registerWith` |
+| Android 报 `compileSdk 34 or later of the Android APIs` | 鸿蒙 fork 的 `shared_preferences_android` 原为 `compileSdkVersion 33`，已提到 35 |
+| 鸿蒙编译报 `The method 'withValues' isn't defined for the class 'Color'` | `withValues` 是 Dart 3.27+ API，鸿蒙 Flutter 仍是 Dart 2.19，一律改用 `withOpacity()` |
+| 鸿蒙编译报 `Cannot invoke a non-'const' constructor where a const expression is expected` | Dart 2.19 的 const 上下文比 Dart 3 严格，去掉外层 `const`，给需要保持常量的子元素显式加 `const` |
+| 鸿蒙构建卡在 `[safe-delete][SAFE_DELETE_BULK_CONFIRM_REQUIRED]` | 待删除文件超 500 时在等人工确认。先 `rm -rf ohos/oh_modules`，再用 `yes | flutter build hap --release` 自动确认 |
+| 改写 `lib/` 后三端产物不一致 | 三端都要重新构建：`./tool/release.sh android`、`./tool/release.sh ohos`、iOS 归档/打包 |
 
 ---
 

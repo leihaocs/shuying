@@ -7,14 +7,18 @@ import 'movies_page.dart';
 import 'stats_page.dart';
 
 class HomeShell extends StatefulWidget {
-  const HomeShell({super.key});
+  /// [initialIndex] 仅用于上架截图（`--dart-define=SHUYING_TAB=n`）直达指定页，
+  /// 正常运行恒为 0。
+  const HomeShell({super.key, this.initialIndex = 0});
+
+  final int initialIndex;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
 }
 
 class _HomeShellState extends State<HomeShell> {
-  int _index = 0;
+  late int _index = widget.initialIndex;
 
   static const List<_TabSpec> _tabs = [
     _TabSpec('📚', '书架'),
@@ -53,7 +57,7 @@ class _HomeShellState extends State<HomeShell> {
                     gradient: c.accentGradient,
                     boxShadow: [
                       BoxShadow(
-                        color: c.accent.withValues(alpha: 0.55),
+                        color: c.accent.withOpacity(0.55),
                         blurRadius: 28,
                         offset: const Offset(0, 12),
                         spreadRadius: -10,

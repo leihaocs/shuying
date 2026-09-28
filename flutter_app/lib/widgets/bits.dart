@@ -259,12 +259,26 @@ class BookStatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
-    final (bg, fg) = switch (bl.bookStatus(book)) {
-      BookStatus.want => (c.infoSoft, c.info),
-      BookStatus.reading => (c.accentSoft, c.accent),
-      BookStatus.rereading => (c.warnSoft, c.warn),
-      BookStatus.finished => (c.okSoft, c.ok),
-    };
+    Color bg;
+    Color fg;
+    switch (bl.bookStatus(book)) {
+      case BookStatus.want:
+        bg = c.infoSoft;
+        fg = c.info;
+        break;
+      case BookStatus.reading:
+        bg = c.accentSoft;
+        fg = c.accent;
+        break;
+      case BookStatus.rereading:
+        bg = c.warnSoft;
+        fg = c.warn;
+        break;
+      case BookStatus.finished:
+        bg = c.okSoft;
+        fg = c.ok;
+        break;
+    }
     return Pill(text: bl.statusLabel(book), background: bg, foreground: fg);
   }
 }
@@ -341,12 +355,26 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
-    final (bg, fg) = switch (kind) {
-      BtnKind.primary => (c.accent, Colors.white),
-      BtnKind.soft => (c.surface2, c.text),
-      BtnKind.ghost => (Colors.transparent, c.text2),
-      BtnKind.danger => (c.dangerSoft, c.danger),
-    };
+    Color bg;
+    Color fg;
+    switch (kind) {
+      case BtnKind.primary:
+        bg = c.accent;
+        fg = Colors.white;
+        break;
+      case BtnKind.soft:
+        bg = c.surface2;
+        fg = c.text;
+        break;
+      case BtnKind.ghost:
+        bg = Colors.transparent;
+        fg = c.text2;
+        break;
+      case BtnKind.danger:
+        bg = c.dangerSoft;
+        fg = c.danger;
+        break;
+    }
 
     final enabled = onPressed != null;
     final child = Container(
@@ -362,7 +390,7 @@ class AppButton extends StatelessWidget {
         boxShadow: kind == BtnKind.primary
             ? [
                 BoxShadow(
-                  color: c.accent.withValues(alpha: 0.45),
+                  color: c.accent.withOpacity(0.45),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                   spreadRadius: -10,

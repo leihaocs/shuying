@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  注意：本文件不是 Android 构建的输入（AGP 只读 app/src/main/AndroidManifest.xml）。
+
+  它存在的唯一原因是鸿蒙 Flutter 分支（~/flutter_ohos，基于 Flutter 3.7.12）
+  的 flutter_tools 只识别 Groovy 的 `android/build.gradle`，不识别本项目使用的
+  Kotlin DSL `build.gradle.kts`，因此会把 App 判定为 Android embedding v1，
+  进而对只支持 v2 的插件（shared_preferences_android）直接报
+  "requires your app to be migrated to the Android embedding v2" 并中断 `pub get`。
+
+  这里显式声明 `flutterEmbedding = 2`，让鸿蒙分支把 App 识别为 v2。
+  Android 构建不受影响。
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+</manifest>

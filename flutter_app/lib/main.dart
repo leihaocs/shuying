@@ -6,11 +6,26 @@ import 'pages/privacy_consent_gate.dart';
 import 'store/app_store.dart';
 import 'theme/app_theme.dart';
 
+/// 上架截图模式：`flutter run --dart-define=SHUYING_SCREENSHOT=true --dart-define=SHUYING_TAB=n`
+/// 会在加载完示例数据后自动同意隐私政策，并直接停在第 n 个 Tab。
+/// 默认关闭，对正常启动没有任何影响。
+const bool kScreenshotMode =
+    bool.fromEnvironment('SHUYING_SCREENSHOT', defaultValue: false);
+const int kScreenshotTab =
+    int.fromEnvironment('SHUYING_TAB', defaultValue: 0);
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     ChangeNotifierProvider<AppStore>(
-      create: (_) => AppStore()..load(),
+      create: (_) {
+        final store = AppStore();
+        final Future<void> loading = store.load();
+        if (kScreenshotMode) {
+          loading.then((_) => store.acceptPrivacy());
+        }
+        return store;
+      },
       child: const ShuYingApp(),
     ),
   );
@@ -54,7 +69,7 @@ class _AppEntry extends StatelessWidget {
     if (!store.privacyConsent) {
       return const PrivacyConsentGate();
     }
-    return const HomeShell();
+    return HomeShell(initialIndex: kScreenshotTab);
   }
 }
 

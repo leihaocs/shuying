@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 
 import '../store/app_store.dart';
@@ -15,26 +14,20 @@ import 'privacy_policy_page.dart';
 /// 已缓存的版本 Future，避免每次 rebuild 都重新发起异步调用。
 Future<String>? _versionFuture;
 
-/// 读取 App 真实版本号，显示为「版本名 (构建号)」，如 `1.0.0 (1)`。
+/// 版本号由构建脚本注入：`--dart-define=APP_VERSION=1.0.0 (1)`（见 tool/release.sh）。
 ///
-/// 数据来源是 `pubspec.yaml` 的 `version` —— Flutter 打包时会把它写进
-/// 各平台的 versionName / CFBundleShortVersionString / versionCode。
-/// 因此**改版本只需改 pubspec.yaml 一行**，本页不会再显示过期的写死值。
+/// 这里不用 package_info_plus：它的 Android 实现要求 compileSdk 34+，Windows 实现
+/// 依赖 win32 5.x，与本项目为鸿蒙（Dart 2.19）锁定的 win32 4.1.4 直接冲突，
+/// 会让三端都构建失败。dart-define 零依赖，三端行为完全一致。
 ///
-/// 个别平台（如尚未提供 ohos 实现的鸿蒙）取不到包信息时返回 `—`，
-/// 不打断页面渲染。
-Future<String> _appVersion() {
-  _versionFuture ??= _readVersion();
-  return _versionFuture!;
-}
+/// 版本号的唯一来源仍是 `pubspec.yaml` 的 `version`，脚本构建时读取并注入，
+/// 所以**改版本只需改 pubspec.yaml 一行**。
+const String _kAppVersion =
+    String.fromEnvironment('APP_VERSION', defaultValue: '1.0.0 (1)');
 
-Future<String> _readVersion() async {
-  try {
-    final info = await PackageInfo.fromPlatform();
-    return '${info.version} (${info.buildNumber})';
-  } catch (_) {
-    return '—';
-  }
+Future<String> _appVersion() {
+  _versionFuture ??= Future<String>.value(_kAppVersion);
+  return _versionFuture!;
 }
 
 /// 「设置 / 关于」页。
