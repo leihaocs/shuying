@@ -130,7 +130,6 @@ class StatCell extends StatelessWidget {
               fontWeight: FontWeight.w700,
               color: c.text,
               letterSpacing: -0.4,
-              fontFeatures: const [FontFeature.tabularFigures()],
             ),
           ),
           const SizedBox(height: 1),
