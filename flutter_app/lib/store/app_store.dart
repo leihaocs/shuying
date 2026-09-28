@@ -176,6 +176,78 @@ class AppStore extends ChangeNotifier {
     super.dispose();
   }
 
+  /* ---------------- 备份 / 恢复 ---------------- */
+
+  /// 导出全部记录为带缩进的 JSON 文本，用于手动备份（粘到备忘录、发到电脑等）。
+  ///
+  /// 不做文件导出 / 分享：鸿蒙 fork 里没有 share_plus，纯文本方案是唯一能
+  /// 同时跑在 Android、iOS、鸿蒙三端且不用加依赖的做法。
+  String exportJson() {
+    final data = <String, dynamic>{
+      'app': 'bookmovie_revisit',
+      'schema': 1,
+      'exportedAt': isoOf(DateTime.now()),
+      'books': _books.map((b) => b.toJson()).toList(),
+      'movies': _movies.map((m) => m.toJson()).toList(),
+    };
+    return const JsonEncoder.withIndent('  ').convert(data);
+  }
+
+  /// 从 JSON 文本恢复记录。
+  ///
+  /// [replace] 为 true 时先清空现有数据再写入；否则按 id 合并（同 id 用导入的覆盖）。
+  /// 返回 books / movies 各自导入的条数；文本不是合法备份时抛 FormatException。
+  Map<String, int> importJson(String text, {bool replace = false}) {
+    final decoded = jsonDecode(text);
+    if (decoded is! Map) {
+      throw const FormatException('最外层应该是一个 JSON 对象');
+    }
+    final map = decoded.cast<String, dynamic>();
+    final rawBooks = map['books'];
+    final rawMovies = map['movies'];
+    if (rawBooks is! List && rawMovies is! List) {
+      throw const FormatException('没有找到 books / movies 字段');
+    }
+    final inBooks = (rawBooks is List ? rawBooks : const <dynamic>[])
+        .whereType<Map>()
+        .map((e) => Book.fromJson(e.cast<String, dynamic>()))
+        .toList();
+    final inMovies = (rawMovies is List ? rawMovies : const <dynamic>[])
+        .whereType<Map>()
+        .map((e) => Movie.fromJson(e.cast<String, dynamic>()))
+        .toList();
+    if (inBooks.isEmpty && inMovies.isEmpty) {
+      throw const FormatException('没有解析出任何书籍或电影记录');
+    }
+    if (replace) {
+      _books
+        ..clear()
+        ..addAll(inBooks);
+      _movies
+        ..clear()
+        ..addAll(inMovies);
+    } else {
+      for (final b in inBooks) {
+        _upsertById(_books, b, (e) => e.id);
+      }
+      for (final m in inMovies) {
+        _upsertById(_movies, m, (e) => e.id);
+      }
+    }
+    _touch();
+    return <String, int>{'books': inBooks.length, 'movies': inMovies.length};
+  }
+
+  /// 已存在同 id 的条目就替换，否则追加。
+  void _upsertById<T>(List<T> list, T item, String Function(T) idOf) {
+    final idx = list.indexWhere((e) => idOf(e) == idOf(item));
+    if (idx >= 0) {
+      list[idx] = item;
+    } else {
+      list.add(item);
+    }
+  }
+
   /* ---------------- 主题 ---------------- */
 
   void toggleTheme() {
