@@ -5,6 +5,7 @@ import '../store/app_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bits.dart';
 import '../widgets/sheets.dart';
+import 'data_backup_page.dart';
 import 'privacy_policy_page.dart';
 
 /* ------------------------------------------------------------------ */
@@ -105,6 +106,20 @@ class SettingsPage extends StatelessWidget {
                 const SizedBox(height: 18),
 
                 const _SectionHeader('数据'),
+                CardBox(
+                  padding: EdgeInsets.zero,
+                  child: _TapRow(
+                    icon: Icons.import_export_rounded,
+                    title: '导出 / 导入记录',
+                    trailing: Icon(Icons.chevron_right_rounded, color: c.text3),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const DataBackupPage(),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 CardBox(
                   padding: EdgeInsets.zero,
                   child: _TapRow(
