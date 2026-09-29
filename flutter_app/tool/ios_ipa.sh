@@ -30,7 +30,7 @@ if [ -z "$IDENTITIES" ] || echo "$IDENTITIES" | grep -q "0 valid identities foun
 未找到任何代码签名证书。
 
 请先完成一次（只需一次）：
-  1. 打开 Xcode → Settings（⌘,）→ Accounts → 左下角 "+" → 选 Apple ID → 登录 leihaocs@gmail.com
+  1. 打开 Xcode → Settings（⌘,）→ Accounts → 左下角 "+" → 选 Apple ID → 登录 leihaocs@foxmail.com
   2. 登录后在 Accounts 里点中该账号，右下角 "Manage Certificates…" → "+" → Apple Development
   3. 打开 ios/Runner.xcworkspace，选中 Runner target → Signing & Capabilities
      → 勾选 Automatically manage signing → Team 选择上面的账号
@@ -161,7 +161,7 @@ if [ "$METHOD" = "development" ]; then
   # Xcode 没登录账号时，自动签名会在打包后期才报 "No Accounts"，这里提前提醒。
   if ! defaults read com.apple.dt.Xcode 2>/dev/null | grep -q 'teamID'; then
     echo "==> 警告：未在 Xcode 设置里读到已登录的 Apple ID"
-    echo "    若稍后报 \"No Accounts\"，请先 Xcode → Settings（⌘,）→ Accounts → + 登录 leihaocs@gmail.com"
+    echo "    若稍后报 \"No Accounts\"，请先 Xcode → Settings（⌘,）→ Accounts → + 登录 leihaocs@foxmail.com"
   fi
 
   XCODE_MAJOR="$(xcodebuild -version 2>/dev/null | awk '/^Xcode /{print int($2)}' || true)"

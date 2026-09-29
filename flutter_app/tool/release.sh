@@ -43,7 +43,7 @@ build_android() {
 build_ios() {
   echo "==> iOS release"
   # 签名证书探测 / ExportOptions 生成 / teamID 推断都在 ios_ipa.sh 里完成；
-  # 前置条件：Xcode → Settings → Accounts 登录 leihaocs@gmail.com。
+  # 前置条件：Xcode → Settings → Accounts 登录 leihaocs@foxmail.com。
   exec "$APP_DIR/tool/ios_ipa.sh" auto
 }
 
