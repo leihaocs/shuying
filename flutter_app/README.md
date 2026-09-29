@@ -267,7 +267,7 @@ flutter build hap --release          # 输出到 ohos/entry/build/default/output
 
 `ipa` 需要签名证书，本机钥匙串里没有证书时任何命令行打包都会失败，所以首次必须走一次 Xcode 交互：
 
-1. 打开 Xcode → `Settings（⌘,）` → `Accounts` → 左下角 `+` → `Apple ID` → 登录 `leihaocs@gmail.com`
+1. 打开 Xcode → `Settings（⌘,）` → `Accounts` → 左下角 `+` → `Apple ID` → 登录 `leihaocs@foxmail.com`
 2. 选中刚添加的账号 → 右下角 `Manage Certificates…` → `+` → `Apple Development`
    （若账号已加入付费开发者计划，再加一个 `Apple Distribution`）
 3. `open ios/Runner.xcworkspace` → 选中 `Runner` Target → `Signing & Capabilities`

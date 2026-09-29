@@ -167,7 +167,7 @@ App Store Connect → 我的 App → `+` → 新建 App
 |---|---|
 | 联系人 姓 / 名 | 雷 / 浩（按账号实名填） |
 | 电话 | `+86 1xxxxxxxxxx` |
-| 邮箱 | `leihaocs@gmail.com` |
+| 邮箱 | `leihaocs@foxmail.com` |
 | 备注 | 见下方（建议填，可省一轮审核问答） |
 
 **审核备注**（可整段复制）：
