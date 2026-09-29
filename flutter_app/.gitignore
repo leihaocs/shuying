@@ -33,6 +33,18 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# 机器本地依赖覆盖（各机器一份，绝不入库）。
+# Mac 把 shared_preferences 各平台实现指向了本机 fork 的绝对路径
+# /Users/leihao/flutter_packages_ohos/...，这台 Windows 上不存在 → pub get 直接失败。
+# 本机用它重定向到 pub.dev 同版本，只为跑 analyze / test；Mac 上没有此文件，不受影响。
+/pubspec_overrides.yaml
+/.ohos_stub/
+
+# 依赖锁文件：两台机器解析结果不同（Mac 用本地 fork 路径，本机用 pub.dev），
+# 共享一份 lock 只会来回冲突，且本机生成的 lock 会让 Mac 的鸿蒙构建解析错包。
+# 各机器各自 pub get 生成，不入库。
+/pubspec.lock
+
 # Symbolication related
 app.*.symbols
 
