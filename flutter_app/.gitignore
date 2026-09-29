@@ -28,6 +28,9 @@ migrate_working_dir/
 **/ios/Flutter/.last_build_id
 .dart_tool/
 .flutter-plugins-dependencies
+# 插件路径清单：`flutter pub get` 生成，里面写的是各机器自己的 pub-cache 绝对路径
+# （Mac 是 /Users/leihao/...，本机是 C:\Users\...），入库必然来回冲突。
+.flutter-plugins
 .pub-cache/
 .pub/
 /build/
@@ -91,3 +94,6 @@ app.*.map.json
 /ohos/**/*.cer
 /ohos/**/*.p7b
 /ohos/**/signingConfigs.json
+# DevEco 生成的整个签名目录（含 material 里无扩展名的证书文件，
+# 以及 *.p7b.bak 这类绕过上面规则的改名文件）。各机器本地生成，不入库。
+/ohos/signing/
