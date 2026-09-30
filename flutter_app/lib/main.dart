@@ -69,7 +69,7 @@ class _AppEntry extends StatelessWidget {
     if (!store.privacyConsent) {
       return const PrivacyConsentGate();
     }
-    return HomeShell(initialIndex: kScreenshotTab);
+    return const HomeShell(initialIndex: kScreenshotTab);
   }
 }
 
