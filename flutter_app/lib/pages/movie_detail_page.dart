@@ -23,12 +23,12 @@ class MovieDetailPage extends StatelessWidget {
     if (movie == null) {
       return Scaffold(
         backgroundColor: c.bg,
-        body: SafeArea(
+        body: const SafeArea(
           child: Column(
             children: [
-              const NavBar(title: '电影'),
-              Expanded(
-                child: EmptyState(icon: '🗑️', title: '这部电影已经不在片单里了'),
+              NavBar(title: '电影'),
+              const Expanded(
+                child: const EmptyState(icon: '🗑️', title: '这部电影已经不在片单里了'),
               ),
             ],
           ),

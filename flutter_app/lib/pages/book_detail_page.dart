@@ -24,12 +24,12 @@ class BookDetailPage extends StatelessWidget {
     if (book == null) {
       return Scaffold(
         backgroundColor: c.bg,
-        body: SafeArea(
+        body: const SafeArea(
           child: Column(
             children: [
-              const NavBar(title: '书籍'),
-              Expanded(
-                child: EmptyState(icon: '🗑️', title: '这本书已经不在书架上了'),
+              NavBar(title: '书籍'),
+              const Expanded(
+                child: const EmptyState(icon: '🗑️', title: '这本书已经不在书架上了'),
               ),
             ],
           ),
