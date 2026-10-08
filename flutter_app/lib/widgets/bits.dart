@@ -389,7 +389,7 @@ class AppButton extends StatelessWidget {
         boxShadow: kind == BtnKind.primary
             ? [
                 BoxShadow(
-                  color: c.accent.withValues(alpha: 0.45),
+                  color: c.accent.withAlpha(115),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                   spreadRadius: -10,

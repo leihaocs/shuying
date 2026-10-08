@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import '../widgets/bits.dart';
 import '../widgets/sheets.dart';
 import 'data_backup_page.dart';
+import 'pro_page.dart';
 import 'privacy_policy_page.dart';
 
 /* ------------------------------------------------------------------ */
@@ -55,6 +56,15 @@ class SettingsPage extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: [
+                CardBox(
+                    child: _TapRow(
+                  icon: Icons.auto_awesome,
+                  title: 'Pro · 年度书影回顾',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(context,
+                      MaterialPageRoute<void>(builder: (_) => const ProPage())),
+                )),
+                const SizedBox(height: 18),
                 const _SectionHeader('外观'),
                 CardBox(
                   child: _TapRow(
@@ -70,7 +80,6 @@ class SettingsPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
-
                 const _SectionHeader('隐私'),
                 CardBox(
                   padding: EdgeInsets.zero,
@@ -104,7 +113,6 @@ class SettingsPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 18),
-
                 const _SectionHeader('数据'),
                 CardBox(
                   padding: EdgeInsets.zero,
@@ -135,11 +143,11 @@ class SettingsPage extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 4),
                   child: Text(
                     '提示：所有数据仅保存在这台设备上，'
-                    '「撤回同意」或「清空数据」后无法恢复，请谨慎操作。',
-                    style: TextStyle(fontSize: 11.5, color: c.text3, height: 1.6),
+                    '撤回同意不会删除记录；清空数据前请先导出 JSON 备份。',
+                    style:
+                        TextStyle(fontSize: 11.5, color: c.text3, height: 1.6),
                   ),
                 ),
-
                 const SizedBox(height: 24),
                 const _SectionHeader('关于'),
                 CardBox(
@@ -183,8 +191,7 @@ class SettingsPage extends StatelessWidget {
     final ok = await confirmSheet(
       context,
       title: '撤回隐私政策同意？',
-      message:
-          '撤回后下次启动书影温故会再次显示隐私政策，需要你重新同意才能继续使用。'
+      message: '撤回后下次启动书影温故会再次显示隐私政策，需要你重新同意才能继续使用。'
           '本操作不会清空你的阅读 / 观影记录。',
       confirmText: '撤回同意',
     );
@@ -197,8 +204,7 @@ class SettingsPage extends StatelessWidget {
     final ok = await confirmSheet(
       context,
       title: '清空所有数据？',
-      message:
-          '会永久删除这台设备上的所有书籍、电影、阅读 / 观影记录，且无法找回。',
+      message: '会永久删除这台设备上的所有书籍、电影、阅读 / 观影记录，且无法找回。',
       confirmText: '永久删除',
     );
     if (ok && context.mounted) {

@@ -5,7 +5,7 @@ String uid([String prefix = '']) {
   final rand = math.Random();
   final a = rand.nextInt(1 << 30).toRadixString(36).padLeft(6, '0');
   final b = DateTime.now().microsecondsSinceEpoch.toRadixString(36);
-  return '$prefix${a.substring(0, 6)}${b.substring(b.length - 3)}';
+  return '$prefix${a.substring(0, 6)}$b';
 }
 
 /// copyWith 用的哨兵，用于区分「没传这个参数」和「显式传 null」。
@@ -16,8 +16,8 @@ DateTime _parseDate(dynamic v) {
   return DateTime.tryParse(v)?.toLocal() ?? DateTime.now();
 }
 
-/// 本地时间 ISO 字符串（不带 Z），保证存取一致。
-String isoOf(DateTime d) => d.toIso8601String();
+/// 新备份使用 UTC，跨时区迁移后按目标设备本地时间显示。
+String isoOf(DateTime d) => d.toUtc().toIso8601String();
 
 /* ------------------------------------------------------------------ */
 /* 书籍                                                               */
@@ -105,8 +105,9 @@ class ReadingRound {
         id: id ?? this.id,
         index: index ?? this.index,
         startedAt: startedAt ?? this.startedAt,
-        finishedAt:
-            identical(finishedAt, kUnset) ? this.finishedAt : finishedAt as DateTime?,
+        finishedAt: identical(finishedAt, kUnset)
+            ? this.finishedAt
+            : finishedAt as DateTime?,
         logs: logs ?? this.logs,
       );
 
@@ -122,7 +123,8 @@ class ReadingRound {
         id: (j['id'] ?? uid('rd_')) as String,
         index: (j['index'] as num?)?.toInt() ?? 1,
         startedAt: _parseDate(j['startedAt']),
-        finishedAt: j['finishedAt'] == null ? null : _parseDate(j['finishedAt']),
+        finishedAt:
+            j['finishedAt'] == null ? null : _parseDate(j['finishedAt']),
         logs: ((j['logs'] as List<dynamic>?) ?? const [])
             .map((e) => ReadingLog.fromJson((e as Map).cast<String, dynamic>()))
             .toList(),
@@ -177,8 +179,9 @@ class Book {
         id: id ?? this.id,
         title: title ?? this.title,
         author: author ?? this.author,
-        totalPages:
-            identical(totalPages, kUnset) ? this.totalPages : totalPages as int?,
+        totalPages: identical(totalPages, kUnset)
+            ? this.totalPages
+            : totalPages as int?,
         cover: cover ?? this.cover,
         accent: accent ?? this.accent,
         note: identical(note, kUnset) ? this.note : note as String?,
@@ -211,7 +214,8 @@ class Book {
         createdAt: _parseDate(j['createdAt']),
         updatedAt: _parseDate(j['updatedAt']),
         rounds: ((j['rounds'] as List<dynamic>?) ?? const [])
-            .map((e) => ReadingRound.fromJson((e as Map).cast<String, dynamic>()))
+            .map((e) =>
+                ReadingRound.fromJson((e as Map).cast<String, dynamic>()))
             .toList(),
       );
 }
@@ -318,7 +322,8 @@ class Movie {
         createdAt: _parseDate(j['createdAt']),
         updatedAt: _parseDate(j['updatedAt']),
         watches: ((j['watches'] as List<dynamic>?) ?? const [])
-            .map((e) => WatchRecord.fromJson((e as Map).cast<String, dynamic>()))
+            .map(
+                (e) => WatchRecord.fromJson((e as Map).cast<String, dynamic>()))
             .toList(),
       );
 }

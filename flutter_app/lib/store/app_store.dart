@@ -1,4 +1,4 @@
-import 'dart:async';
+import 'dart:io';
 import 'dart:collection';
 import 'dart:convert';
 
@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/fmt.dart';
 import '../models/models.dart';
+import '../services/backup_codec.dart';
+import '../services/backup_files.dart';
 
 /* ------------------------------------------------------------------ */
 /* 输入类型                                                            */
@@ -82,12 +84,19 @@ class PastRoundInput {
 
 /// 全局状态 + 本地持久化。
 ///
-/// 存储层被刻意收敛到 [load] / [_persist] 两个方法里，
+/// 存储层被刻意收敛到 [load] / [flush] 两个方法里，
 /// 换成 sqflite、Hive 或鸿蒙专用存储时只需要改这两处。
-class AppStore extends ChangeNotifier {
+class AppStore extends ChangeNotifier with WidgetsBindingObserver {
+  AppStore({this.dataDirectory}) {
+    WidgetsBinding.instance.addObserver(this);
+  }
+  final String? dataDirectory;
+  File? _stateFile;
   static const String _kState = 'shuying.state.v1';
   static const String _kTheme = 'shuying.theme.v1';
   static const String _kPrivacy = 'shuying.privacy.v1';
+  static const String _kPrivacyVersion = 'shuying.privacy.version';
+  static const String privacyVersion = '2026-10-02';
 
   final List<Book> _books = <Book>[];
   final List<Movie> _movies = <Movie>[];
@@ -104,75 +113,108 @@ class AppStore extends ChangeNotifier {
   bool _ready = false;
   bool get ready => _ready;
 
-  Timer? _saveTimer;
+  Future<void> _saveQueue = Future<void>.value();
+  SharedPreferences? _prefs;
+  String? storageError;
+  bool loadFailed = false;
+  bool _disposed = false;
+  int _savingJobs = 0;
+  bool get saving => _savingJobs > 0;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed && _ready && !loadFailed) flush();
+  }
+
+  Future<bool> flush() async {
+    if (loadFailed || !_ready) return false;
+    _schedulePersist();
+    await _saveQueue;
+    return storageError == null;
+  }
 
   /* ---------------- 读写 ---------------- */
 
   Future<void> load() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final themeRaw = prefs.getString(_kTheme);
-      _themeMode =
-          themeRaw == 'dark' ? ThemeMode.dark : ThemeMode.light;
-      _privacyConsent = prefs.getBool(_kPrivacy) ?? false;
-
-      final raw = prefs.getString(_kState);
-      if (raw == null || raw.isEmpty) {
+      _prefs = await SharedPreferences.getInstance();
+      _themeMode = _prefs!.getString(_kTheme) == 'dark'
+          ? ThemeMode.dark
+          : ThemeMode.light;
+      _privacyConsent = (_prefs!.getBool(_kPrivacy) ?? false) &&
+          _prefs!.getString(_kPrivacyVersion) == privacyVersion;
+      final directory = dataDirectory ??
+          await BackupFiles.channel.invokeMethod<String>('storagePath');
+      if (directory == null) throw StateError('本地存储目录不可用');
+      await Directory(directory).create(recursive: true);
+      _stateFile = File('$directory/state.v1.json');
+      final raw = await _stateFile!.exists()
+          ? await _stateFile!.readAsString()
+          : _prefs!.getString(_kState);
+      if (raw == null) {
         _seed();
       } else {
-        final map = jsonDecode(raw) as Map<String, dynamic>;
+        final data = decodeBackup(raw, legacy: true);
         _books
           ..clear()
-          ..addAll(((map['books'] as List<dynamic>?) ?? const [])
-              .map((e) => Book.fromJson((e as Map).cast<String, dynamic>())));
+          ..addAll(data.books);
         _movies
           ..clear()
-          ..addAll(((map['movies'] as List<dynamic>?) ?? const [])
-              .map((e) => Movie.fromJson((e as Map).cast<String, dynamic>())));
+          ..addAll(data.movies);
       }
+      loadFailed = false;
+      storageError = null;
     } catch (_) {
-      // 数据损坏时不要让 App 起不来
-      _books.clear();
-      _movies.clear();
+      loadFailed = true;
+      storageError = '本机记录读取失败，原数据已保留。请重试，勿卸载应用。';
     }
     _ready = true;
     notifyListeners();
+    if (!loadFailed) _schedulePersist();
   }
 
-  /// 合并短时间内的多次写入，避免每敲一个字都落盘。
+  // 每次修改立即排队写入，不再等待 250ms；按顺序保存不可变快照。
   void _schedulePersist() {
-    _saveTimer?.cancel();
-    _saveTimer = Timer(const Duration(milliseconds: 250), _persist);
-  }
-
-  Future<void> _persist() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(
-        _kState,
-        jsonEncode({
-          'books': _books.map((b) => b.toJson()).toList(),
-          'movies': _movies.map((m) => m.toJson()).toList(),
-        }),
-      );
-      await prefs.setString(
-        _kTheme,
-        _themeMode == ThemeMode.dark ? 'dark' : 'light',
-      );
-      await prefs.setBool(_kPrivacy, _privacyConsent);
-    } catch (_) {
-      // 存储不可用时忽略
-    }
+    if (loadFailed || _prefs == null) return;
+    final snapshot = jsonEncode({
+      'books': _books.map((b) => b.toJson()).toList(),
+      'movies': _movies.map((m) => m.toJson()).toList(),
+    });
+    final theme = _themeMode == ThemeMode.dark ? 'dark' : 'light';
+    final consent = _privacyConsent;
+    _savingJobs++;
+    _saveQueue = _saveQueue.then((_) async {
+      try {
+        final file = _stateFile!;
+        final temporary = File('${file.path}.tmp');
+        await temporary.writeAsString(snapshot, flush: true);
+        if (await file.exists()) await file.copy('${file.path}.previous');
+        await temporary.rename(file.path);
+        if (!await _prefs!.setString(_kTheme, theme) ||
+            !await _prefs!.setBool(_kPrivacy, consent) ||
+            !await _prefs!
+                .setString(_kPrivacyVersion, consent ? privacyVersion : '')) {
+          throw StateError('保存失败');
+        }
+        storageError = null;
+      } catch (_) {
+        storageError = '记录尚未保存成功，请重试保存或立即导出备份，勿关闭应用。';
+      }
+      _savingJobs--;
+      if (!_disposed) notifyListeners();
+    });
   }
 
   void _touch() {
+    if (loadFailed) throw StateError('读取失败时禁止覆盖本机数据');
     _schedulePersist();
     notifyListeners();
   }
 
   @override
   void dispose() {
-    _saveTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    _disposed = true;
     super.dispose();
   }
 
@@ -180,8 +222,7 @@ class AppStore extends ChangeNotifier {
 
   /// 导出全部记录为带缩进的 JSON 文本，用于手动备份（粘到备忘录、发到电脑等）。
   ///
-  /// 不做文件导出 / 分享：鸿蒙 fork 里没有 share_plus，纯文本方案是唯一能
-  /// 同时跑在 Android、iOS、鸿蒙三端且不用加依赖的做法。
+  /// 三端共用同一个 JSON 协议，文件导出不包含购买权益。
   String exportJson() {
     final data = <String, dynamic>{
       'app': 'bookmovie_revisit',
@@ -193,59 +234,19 @@ class AppStore extends ChangeNotifier {
     return const JsonEncoder.withIndent('  ').convert(data);
   }
 
-  /// 从 JSON 文本恢复记录。
-  ///
-  /// [replace] 为 true 时先清空现有数据再写入；否则按 id 合并（同 id 用导入的覆盖）。
-  /// 返回 books / movies 各自导入的条数；文本不是合法备份时抛 FormatException。
-  Map<String, int> importJson(String text, {bool replace = false}) {
-    final decoded = jsonDecode(text);
-    if (decoded is! Map) {
-      throw const FormatException('最外层应该是一个 JSON 对象');
-    }
-    final map = decoded.cast<String, dynamic>();
-    final rawBooks = map['books'];
-    final rawMovies = map['movies'];
-    if (rawBooks is! List && rawMovies is! List) {
-      throw const FormatException('没有找到 books / movies 字段');
-    }
-    final inBooks = (rawBooks is List ? rawBooks : const <dynamic>[])
-        .whereType<Map>()
-        .map((e) => Book.fromJson(e.cast<String, dynamic>()))
-        .toList();
-    final inMovies = (rawMovies is List ? rawMovies : const <dynamic>[])
-        .whereType<Map>()
-        .map((e) => Movie.fromJson(e.cast<String, dynamic>()))
-        .toList();
-    if (inBooks.isEmpty && inMovies.isEmpty) {
-      throw const FormatException('没有解析出任何书籍或电影记录');
-    }
-    if (replace) {
-      _books
-        ..clear()
-        ..addAll(inBooks);
-      _movies
-        ..clear()
-        ..addAll(inMovies);
-    } else {
-      for (final b in inBooks) {
-        _upsertById(_books, b, (e) => e.id);
-      }
-      for (final m in inMovies) {
-        _upsertById(_movies, m, (e) => e.id);
-      }
-    }
+  /// 跨端合并：按稳定 ID 合并书籍、轮次、日志与观影记录，不传播删除。
+  Map<String, int> importJson(String text) {
+    if (loadFailed) throw StateError('请先解决本机读取错误');
+    final incoming = decodeBackup(text);
+    final merged = mergeBackup(_books, _movies, incoming);
+    _books
+      ..clear()
+      ..addAll(merged.books);
+    _movies
+      ..clear()
+      ..addAll(merged.movies);
     _touch();
-    return <String, int>{'books': inBooks.length, 'movies': inMovies.length};
-  }
-
-  /// 已存在同 id 的条目就替换，否则追加。
-  void _upsertById<T>(List<T> list, T item, String Function(T) idOf) {
-    final idx = list.indexWhere((e) => idOf(e) == idOf(item));
-    if (idx >= 0) {
-      list[idx] = item;
-    } else {
-      list.add(item);
-    }
+    return {'books': incoming.books.length, 'movies': incoming.movies.length};
   }
 
   /* ---------------- 主题 ---------------- */
@@ -436,7 +437,8 @@ class AppStore extends ChangeNotifier {
         final kept = b.rounds.where((r) => r.id != roundId).toList();
         return b.copyWith(
           rounds: [
-            for (var i = 0; i < kept.length; i++) kept[i].copyWith(index: i + 1),
+            for (var i = 0; i < kept.length; i++)
+              kept[i].copyWith(index: i + 1),
           ],
         );
       });

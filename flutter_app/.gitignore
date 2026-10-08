@@ -97,3 +97,6 @@ app.*.map.json
 # DevEco 生成的整个签名目录（含 material 里无扩展名的证书文件，
 # 以及 *.p7b.bak 这类绕过上面规则的改名文件）。各机器本地生成，不入库。
 /ohos/signing/
+
+# Hvigor local build cache
+/.hvigor/

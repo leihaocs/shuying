@@ -34,10 +34,10 @@ build_android() {
   echo "==> Android release（APK + AAB）"
   export PATH="$MAIN_FLUTTER/bin:$PATH"
   flutter pub get
-  flutter build apk --release "$DART_DEFINE"
-  flutter build appbundle --release "$DART_DEFINE"
-  echo "    APK: build/app/outputs/flutter-apk/app-release.apk"
-  echo "    AAB: build/app/outputs/bundle/release/app-release.aab"
+  flutter build apk --release --flavor direct "$DART_DEFINE"
+  flutter build appbundle --release --flavor play "$DART_DEFINE"
+  echo "    APK: build/app/outputs/flutter-apk/app-direct-release.apk"
+  echo "    AAB: build/app/outputs/bundle/playRelease/app-play-release.aab"
 }
 
 build_ios() {

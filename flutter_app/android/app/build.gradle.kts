@@ -3,6 +3,7 @@ import java.io.FileInputStream
 
 plugins {
     id("com.android.application")
+    id("org.jetbrains.kotlin.android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
@@ -24,7 +25,12 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    buildFeatures { buildConfig = true }
+
     defaultConfig {
+        val playKey = (project.findProperty("PLAY_LICENSE_KEY") as? String ?: "")
+            .replace("\\", "\\\\").replace("\"", "\\\"")
+        buildConfigField("String", "PLAY_LICENSE_KEY", "\"$playKey\"")
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.bookmovie.revisit.app"
         // You can update the following values to match your application needs.
@@ -37,6 +43,12 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+    }
+
+    flavorDimensions += "store"
+    productFlavors {
+        create("direct") { dimension = "store" }
+        create("play") { dimension = "store" }
     }
 
     signingConfigs {
@@ -76,3 +88,6 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+// Google Play 渠道需要控制台 RSA 公钥；无公钥时禁用购买，不伪造权益。
+dependencies { add("playImplementation", "com.android.billingclient:billing:8.3.0") }

@@ -24,12 +24,15 @@ class BookDetailPage extends StatelessWidget {
     if (book == null) {
       return Scaffold(
         backgroundColor: c.bg,
-        body: const SafeArea(
+        // Column is not const in the older HarmonyOS Flutter SDK.
+        // ignore: prefer_const_constructors
+        body: SafeArea(
+          // ignore: prefer_const_constructors
           child: Column(
-            children: [
+            children: const [
               NavBar(title: '书籍'),
-              const Expanded(
-                child: const EmptyState(icon: '🗑️', title: '这本书已经不在书架上了'),
+              Expanded(
+                child: EmptyState(icon: '🗑️', title: '这本书已经不在书架上了'),
               ),
             ],
           ),
@@ -137,13 +140,16 @@ class BookDetailPage extends StatelessWidget {
                   const SizedBox(height: 24),
                   const SectionTitle('书籍信息'),
                   CardBox(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                     child: Column(
                       children: [
                         _InfoRow('作者', book.author),
-                        _InfoRow('总页数',
-                            book.totalPages == null ? '—' : '${book.totalPages} 页'),
+                        _InfoRow(
+                            '总页数',
+                            book.totalPages == null
+                                ? '—'
+                                : '${book.totalPages} 页'),
                         _InfoRow('累计阅读',
                             '${summary.totalPages} 页 · ${formatDuration(summary.totalMinutes)}'),
                         _InfoRow('记录条数', '${summary.totalLogs} 条'),
@@ -513,8 +519,7 @@ class _LogTimeline extends StatelessWidget {
                                       if (l.pages != null)
                                         _How('📄 ${l.pages} 页'),
                                       if (l.minutes != null)
-                                        _How(
-                                            '⏱ ${formatDuration(l.minutes)}'),
+                                        _How('⏱ ${formatDuration(l.minutes)}'),
                                       if (l.progress != null)
                                         _How('📈 进度 ${l.progress}%'),
                                       if (l.pages == null &&
