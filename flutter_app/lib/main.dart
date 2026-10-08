@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'pages/home_shell.dart';
+import 'services/pro_store.dart';
 import 'pages/privacy_consent_gate.dart';
 import 'store/app_store.dart';
 import 'theme/app_theme.dart';
@@ -11,21 +12,25 @@ import 'theme/app_theme.dart';
 /// 默认关闭，对正常启动没有任何影响。
 const bool kScreenshotMode =
     bool.fromEnvironment('SHUYING_SCREENSHOT', defaultValue: false);
-const int kScreenshotTab =
-    int.fromEnvironment('SHUYING_TAB', defaultValue: 0);
+const int kScreenshotTab = int.fromEnvironment('SHUYING_TAB', defaultValue: 0);
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
-    ChangeNotifierProvider<AppStore>(
-      create: (_) {
-        final store = AppStore();
-        final Future<void> loading = store.load();
-        if (kScreenshotMode) {
-          loading.then((_) => store.acceptPrivacy());
-        }
-        return store;
-      },
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ProStore>(create: (_) => ProStore()),
+        ChangeNotifierProvider<AppStore>(
+          create: (_) {
+            final store = AppStore();
+            final Future<void> loading = store.load();
+            if (kScreenshotMode) {
+              loading.then((_) => store.acceptPrivacy());
+            }
+            return store;
+          },
+        ),
+      ],
       child: const ShuYingApp(),
     ),
   );
@@ -66,10 +71,34 @@ class _AppEntry extends StatelessWidget {
     if (!store.ready) {
       return const _SplashScreen();
     }
+    if (store.loadFailed) {
+      return Scaffold(
+          body: Center(
+              child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(store.storageError!),
+          ElevatedButton(onPressed: store.load, child: const Text('重新读取')),
+        ]),
+      )));
+    }
     if (!store.privacyConsent) {
       return const PrivacyConsentGate();
     }
-    return const HomeShell(initialIndex: kScreenshotTab);
+    return Column(children: [
+      if (store.saving && store.storageError == null)
+        const SafeArea(bottom: false, child: LinearProgressIndicator()),
+      if (store.storageError != null)
+        SafeArea(
+            bottom: false,
+            child: MaterialBanner(
+              content: Text(store.storageError!),
+              actions: [
+                TextButton(onPressed: store.flush, child: const Text('重试保存'))
+              ],
+            )),
+      const Expanded(child: HomeShell(initialIndex: kScreenshotTab)),
+    ]);
   }
 }
 

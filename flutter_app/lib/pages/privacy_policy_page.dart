@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../store/app_store.dart';
 import '../widgets/bits.dart';
 
 /// 隐私政策正文。
@@ -14,7 +15,7 @@ class PrivacyPolicyPage extends StatelessWidget {
   final bool showAppBar;
 
   /// 当前文本生效版本号，与设置页/应用市场审核版本对齐。
-  static const String version = '2026-09-21';
+  static const String version = AppStore.privacyVersion;
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +94,7 @@ class _PrivacyPolicyBody extends StatelessWidget {
             title: '1. 我们不采集你的数据',
             children: [
               _P(
-                '书影温故不会上传你的任何数据到服务器。整本书的阅读记录、电影观影记录、评分、备注，全部只保存在你这台设备的本地数据库中。',
+                '书影温故不会把阅读和观影记录上传到开发者服务器。书籍、电影、评分和备注保存在这台设备的应用私有 JSON 文件中。',
               ),
               _P(
                 '开发者也无法远程读取你的数据，因为我们根本没有你的数据。',
@@ -102,27 +103,27 @@ class _PrivacyPolicyBody extends StatelessWidget {
           ),
 
           const _Section(
-            title: '2. 我们不申请网络权限',
+            title: '2. 本地记录与购买服务',
             children: [
               _P(
-                '书影温故默认不连接互联网。Android / iOS / 鸿蒙三端的安装包都不包含任何网络请求，也不会在后台悄悄访问网络。',
+                '阅读与观影记录在本机处理，不会自动上传到开发者服务器。购买、恢复购买与查询商品时，应用会连接对应商店的购买服务；购买信息由商店按其隐私政策处理。',
               ),
               _P(
-                '如果未来加入云同步等联网功能，我们会在更新前再次提示并征求你的同意。',
+                '当前不提供云同步。导出的 JSON 备份包含你的书影记录、评分与备注，请只交给你信任的设备或文件服务。',
               ),
             ],
           ),
 
           const _Section(
-            title: '3. 我们不接入第三方 SDK',
+            title: '3. 基础依赖与第三方服务',
             children: [
               _P(
-                '书影温故不嵌入统计 SDK、推送 SDK、广告 SDK 或任何第三方组件。'
+                '书影温故使用 Flutter、provider、shared_preferences 等基础组件，安卓 Google Play 版本使用 Play Billing，iOS 使用系统 StoreKit。我们不接入广告、行为分析或推送 SDK。'
                 '应用商店要求的「应用内隐私声明」中所列项，'
                 '涉及「设备信息 / 标识符 / 位置 / 通讯录 / 相机 / 麦克风」等，书影温故均不收集。',
               ),
               _P(
-                '因此不会出现「第三方共享」「个性化广告」「自动化决策」等情形。',
+                '开发者不将你的书影记录出售或共享给第三方。使用系统文件选择器时，你选择的文件服务可能处理备份；该行为由你主动发起，请参考该服务的隐私政策。',
               ),
             ],
           ),
@@ -131,11 +132,11 @@ class _PrivacyPolicyBody extends StatelessWidget {
             title: '4. 你的数据存在哪里',
             children: [
               _P(
-                '所有阅读 / 观影记录保存在设备本地的 SharedPreferences / Keychain / 沙盒目录中，'
+                '阅读 / 观影记录保存在应用沙盒内的本地 JSON 文件中，主题和同意标记等偏好通过 shared_preferences 保存，'
                 '与系统其他 App 完全隔离，操作系统权限会阻止其他 App 读取。',
               ),
               _P(
-                '卸载 App = 永久删除全部数据，且不可恢复。建议你在更换设备前手动导出（当前版本尚未提供导出功能，我们会在后续版本加入）。',
+                '卸载可能删除本机数据。当前支持 JSON 文件与文本导出，以及跨端合并导入。请在卸载或更换设备前备份；有完整备份时可重新导入。系统备份行为以设备设置为准。',
               ),
             ],
           ),
@@ -159,12 +160,12 @@ class _PrivacyPolicyBody extends StatelessWidget {
             title: '6. 权限说明',
             children: [
               _P(
-                '当前版本不申请任何系统权限：不申请网络、通知、存储、相机、麦克风、'
-                '位置、通讯录、日历等权限，也不读取设备标识符。'
-                '所有功能都可在零权限状态下正常使用。',
+                '当前版本不申请相机、麦克风、位置、通讯录或通知等运行时权限。文件导入导出使用系统选择器，只访问你选择的文件。应用不读取'
+                '设备标识符用于广告追踪。'
+                '购买服务需要网络及对应商店账号。',
               ),
               _P(
-                '若未来版本引入通知提醒、数据备份等功能需要新增权限，'
+                '若未来版本引入需要新增权限的功能，'
                 '我们会在更新说明中告知，并由你在系统弹窗中自行决定是否授权。',
               ),
             ],
@@ -183,7 +184,7 @@ class _PrivacyPolicyBody extends StatelessWidget {
             title: '8. 政策更新',
             children: [
               _P(
-                '本政策可能随版本更新而修订。版本号会标注在页面顶部，更新生效后会再次弹出首次启动同意页，请你重新确认。',
+                '本政策可能随版本更新而修订。版本号会标注在页面顶部，政策版本变化后会重新显示同意页，请你确认。',
               ),
             ],
           ),

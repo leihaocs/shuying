@@ -23,12 +23,15 @@ class MovieDetailPage extends StatelessWidget {
     if (movie == null) {
       return Scaffold(
         backgroundColor: c.bg,
-        body: const SafeArea(
+        // Column is not const in the older HarmonyOS Flutter SDK.
+        // ignore: prefer_const_constructors
+        body: SafeArea(
+          // ignore: prefer_const_constructors
           child: Column(
-            children: [
+            children: const [
               NavBar(title: '电影'),
-              const Expanded(
-                child: const EmptyState(icon: '🗑️', title: '这部电影已经不在片单里了'),
+              Expanded(
+                child: EmptyState(icon: '🗑️', title: '这部电影已经不在片单里了'),
               ),
             ],
           ),
@@ -174,8 +177,8 @@ class MovieDetailPage extends StatelessWidget {
                   const SizedBox(height: 24),
                   const SectionTitle('电影信息'),
                   CardBox(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                     child: Column(
                       children: [
                         _InfoRow('导演', movie.director),

@@ -1,7 +1,7 @@
 name: shuying
 description: 书影温故 · 记录每一本书的阅读轨迹与每一部电影的观影轨迹
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   # 下限放宽到 2.19 以兼容鸿蒙 Flutter（3.7.12-ohos 分支，Dart 2.19）；

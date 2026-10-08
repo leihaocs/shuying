@@ -9,16 +9,22 @@
 | 包名 / Bundle ID / bundleName | `com.bookmovie.revisit.app` |
 
 > 📌 **发布前的全部流程只查这一份**：仓库根目录 [`发布前操作手册.md`](../发布前操作手册.md)
-> ——开发者账号注册、软著、App 备案、隐私政策、商店提交，以及这台 Windows 能做的每一步、
+> ——开发者账号注册、软著、App 备案、隐私政策、商店提交，以及 Mac 构建、浏览器办理和真机验收的分工、
 > 去哪个网页、什么顺序，都在里面（含软著材料模板与隐私政策全文附录）。
 
 - 记录每本书的阅读轨迹：页数、时长、进度、多轮重读
 - 书籍状态：想读 / 在读 / 再次阅读 / 已读 N 次
 - 记录每部电影：想看 / 已看 N 次，含观看时间与星级
 - 统计：阅读时长、累计页数、近 7 天趋势、最近动态
-- 数据全部保存在本机（`shared_preferences`），无需后端、无需登录
+- 书影记录保存在本机私有 JSON 文件，偏好使用 `shared_preferences`；无需自建账号，Pro 购买使用商店服务
 
 ---
+
+## 最新进度（2026-10-01）
+
+- iOS 1.0.0 (1) 已导出 Apple Distribution 签名 IPA；用户确认 iPhone 13（iOS 27）已通过 TestFlight 安装并进入书架。完整验收及正式审核尚未完成。
+- 阿里云域名 `bookmovie-revisit.cn` 已申请，实名状态待核对；ECS 尚未购买。
+- 发布步骤、并行关系与备案适用性以根目录《发布前操作手册》当前清单为准。下方三端通用历史说明如有出入，以该手册为准。
 
 ## 一、目录结构
 
@@ -53,7 +59,7 @@ flutter_app/
 | 工具 | 用途 | 安装 |
 |---|---|---|
 | Flutter SDK ≥ 3.22 | 通用三端 | `brew install --cask flutter` 或官网下载 |
-| Xcode ≥ 15 | iOS 构建 | App Store，装完执行 `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer` |
+| Xcode ≥ 26 | iOS 构建 | App Store，装完执行 `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer` |
 | CocoaPods | iOS 依赖 | `sudo gem install cocoapods` |
 | Android Studio + JDK 17 | Android 构建 | 官网；SDK Manager 装 Android SDK / Build-Tools |
 | DevEco Studio ≥ 5.0 | 鸿蒙签名与上架 | 华为开发者官网 |
@@ -271,7 +277,7 @@ flutter build hap --release          # 输出到 ohos/entry/build/default/output
 3. `open ios/Runner.xcworkspace` → 选中 `Runner` Target → `Signing & Capabilities`
    → 勾选 `Automatically manage signing` → Team 选上面的账号
    → Bundle Identifier 保持 `com.bookmovie.revisit.app`
-   → 工程已把 Team 固化进 `project.pbxproj`（`DEVELOPMENT_TEAM = Y25KP5S862`），若以后换账号请重新设置
+   → 工程已把 Team 固化进 `project.pbxproj`（`DEVELOPMENT_TEAM = 6D7W6L5VH9`），若以后换账号请重新设置
 4. 回到终端执行下面的命令
 
 > 免费账号（Personal Team）不能上架 App Store，只能导出 development 包，且导出前必须先用 USB 或 Wi-Fi
@@ -453,3 +459,16 @@ pip3 install Pillow
 - 华为 AGC 上架指引：https://developer.huawei.com/consumer/cn/doc/app/agc-help-releaseapkrpk-0000001106463276
 - APP 备案指引（华为）：https://developer.huawei.com/consumer/cn/doc/app/50130
 - 苹果 App Store Connect 帮助：https://developer.apple.com/cn/help/app-store-connect/
+
+## 2026-10-02 候选版本 1.0.0+2
+
+免费核心功能与 Pro 年度回顾、三端 JSON 文件合并、本地数据可靠性及隐私文案已更新。iOS / Android / 鸿蒙构建已验证；购买商品配置、支付真机测试和鸿蒙零售设备签名待完成。参见 [Pro 与跨端备份实施进度](../store/Pro与跨端备份实施进度.md)。
+
+鸿蒙发布目标已调整为最低 HarmonyOS 6、重点验证 HarmonyOS 7（Mate 80）；HarmonyOS 5 不纳入首发支持范围。现有 OpenHarmony API 15 HAP 仍为未验证设备兼容性的历史候选包，正式适配需升级评估官方套件、配置华为签名并在 6/7 真机验收。
+
+### Android 渠道包（2026-10-06）
+
+- 非 Google Play / 卓易通测试：`flutter build apk --release --flavor direct`。产物 `build/app/outputs/flutter-apk/app-direct-release.apk`，不包含 Google Play Billing；当前不开放 Pro 购买。
+- Google Play：`flutter build appbundle --release --flavor play`。产物 `build/app/outputs/bundle/playRelease/app-play-release.aab`，保留 Play Billing，商品与真实交易仍需后台配置和验收。
+- 两个渠道沿用同一包名和签名，不适合在同一安卓环境并存；鸿蒙原生版与卓易通内安卓版的数据分别保存。
+- 卓易通是否接受本地 APK、系统文件选择器是否可用，必须在 Mate 80 实测，不能以 APK 构建成功替代安装验收。

@@ -10,6 +10,7 @@ import '../widgets/bits.dart';
 import 'book_detail_page.dart';
 import 'home_shell.dart';
 import 'movie_detail_page.dart';
+import 'year_review_page.dart';
 
 const List<String> _weekLabels = ['日', '一', '二', '三', '四', '五', '六'];
 
@@ -189,6 +190,21 @@ class StatsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                CardBox(
+                    child: Material(
+                        color: Colors.transparent,
+                        child: ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(Icons.auto_awesome),
+                          title: const Text('年度书影回顾 · Pro'),
+                          subtitle: const Text('按年份回顾阅读与观影，查看 12 个月趋势'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute<void>(
+                                  builder: (_) => const YearReviewPage())),
+                        ))),
+                const SizedBox(height: 16),
                 StatGrid(
                   cells: [
                     StatCell(value: '$readTimes', label: '读完次数'),
@@ -204,7 +220,6 @@ class StatsPage extends StatelessWidget {
                     StatCell(value: '$watchTimes', label: '观影次数'),
                   ],
                 ),
-
                 const SizedBox(height: 24),
                 const SectionTitle('近 7 天阅读时长'),
                 CardBox(
@@ -271,7 +286,6 @@ class StatsPage extends StatelessWidget {
                     ],
                   ),
                 ),
-
                 if (reading.isNotEmpty) ...[
                   const SizedBox(height: 24),
                   const SectionTitle('正在读'),
@@ -280,7 +294,6 @@ class StatsPage extends StatelessWidget {
                     const SizedBox(height: 10),
                   ],
                 ],
-
                 const SizedBox(height: 24),
                 const SectionTitle('最近动态'),
                 if (activity.isEmpty)

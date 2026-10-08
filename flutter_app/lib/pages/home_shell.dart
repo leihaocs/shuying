@@ -57,7 +57,7 @@ class _HomeShellState extends State<HomeShell> {
                     gradient: c.accentGradient,
                     boxShadow: [
                       BoxShadow(
-                        color: c.accent.withValues(alpha: 0.55),
+                        color: c.accent.withAlpha(140),
                         blurRadius: 28,
                         offset: const Offset(0, 12),
                         spreadRadius: -10,
