@@ -6,7 +6,8 @@
 |---|---|
 | 中文名 | 书影温故 |
 | 英文名 | Reel & Read |
-| 包名 / Bundle ID / bundleName | `com.bookmovie.revisit.app` |
+| Android applicationId / iOS Bundle ID | `com.bookmovie.revisit.app` |
+| HarmonyOS bundleName | `com.bookmovie.revisit.app.hm` |
 
 > 📌 **发布前的全部流程只查这一份**：仓库根目录 [`发布前操作手册.md`](../发布前操作手册.md)
 > ——开发者账号注册、软著、App 备案、隐私政策、商店提交，以及 Mac 构建、浏览器办理和真机验收的分工、
@@ -20,11 +21,18 @@
 
 ---
 
-## 最新进度（2026-10-01）
+## 当前状态（2026-10-17，最后核对）
 
-- iOS 1.0.0 (1) 已导出 Apple Distribution 签名 IPA；用户确认 iPhone 13（iOS 27）已通过 TestFlight 安装并进入书架。完整验收及正式审核尚未完成。
-- 阿里云域名 `bookmovie-revisit.cn` 已申请，实名状态待核对；ECS 尚未购买。
-- 发布步骤、并行关系与备案适用性以根目录《发布前操作手册》当前清单为准。下方三端通用历史说明如有出入，以该手册为准。
+- Android / iOS 包名保持 `com.bookmovie.revisit.app`；鸿蒙包名固定为 `com.bookmovie.revisit.app.hm`，APP ID `6917619319382055664`。三端不要求包名完全相同，各端与各自商店及备案登记一致。
+- 华为后台已只保留新鸿蒙条目和原包名 Android 条目（最新截图确认）；旧鸿蒙 `6917618245378259017` 和多余安卓 `119391515` 已清理。保留的 Android APP ID 尚待从详情登记，不沿用已删除 ID。
+- 鸿蒙新包调试/发布签名均构建成功；已通过无线 hdc 安装启动，用户确认 Mate80 / HarmonyOS 7 功能完整、验证通过。旧应用无数据且已卸载，本次无旧包数据迁移需求。
+- 发布包：`dist/1.0.0-2/shuying-harmonyos-hm-1.0.0-2.app`；调试包：`dist/1.0.0-2/shuying-harmonyos-hm-debug-1.0.0-2.hap`。本地 `default` 为发布签名、`debug` 为自动调试签名，构建后已恢复默认发布配置。证书及密钥继续保留，不提交密码或私钥。
+- 域名已实名、ECS 已购买，未部署业务后端。APP 备案已完成短信核验、正在管局审核，尚未取得备案号；阿里云预计 9 日仅为页面估计。
+- 备案当前鸿蒙包名仍为旧值。当前审核通过后，办理 APP 变更，将鸿蒙运行平台软件包名更新为 `.hm`，核对发布证书公钥/指纹；Android/iOS 原包名保持不变。若退回补正，则在允许编辑时同步修正。
+- 发布顺序：当前备案通过且各自验收、材料及商店审核齐备后，优先发布国内 iOS 与 Android；鸿蒙须再等 `.hm` 备案变更通过并同步、完成其余资质与商店审核后发布。鸿蒙不阻塞已满足条件的 iOS/Android，但不承诺商店在变更审核期间必定通过自动核验。
+- 未完成：版权材料、真实商店截图/隐私支持页复核、备案号展示与最终候选包；最新版 iOS、Android/HarmonyOS 4、HarmonyOS 6 及正式分发验收；真实支付未验收。卓易通永久排除。尚未正式上架，Mate80 测试通过不代表这些事项均完成。
+
+备案操作依据：[阿里云变更备案](https://help.aliyun.com/zh/icp-filing/basic-icp-service/change-the-record)、[审核状态 FAQ](https://help.aliyun.com/zh/icp-filing/basic-icp-service/support/for-the-record-review-faq)。变更期间原备案内容依旧有效，已备案 App 正常访问不受影响；商店提审仍按其当时核验结果执行。
 
 ## 一、目录结构
 
@@ -414,7 +422,7 @@ pip3 install Pillow
 
 ## 八、发布前检查清单
 
-- [ ] 包名 / Bundle ID 三端均为 `com.bookmovie.revisit.app`，不再更改
+- [ ] Android/iOS 为 `com.bookmovie.revisit.app`；鸿蒙为 `com.bookmovie.revisit.app.hm`，分别与平台及备案登记匹配
 - [ ] 签名密钥已生成并**异地备份**（Android `.jks`、鸿蒙 `.p12`，丢了无法更新）
 - [ ] App 名称 `书影温故`、图标、启动图已替换，代码内 UI 文案也已统一
 - [ ] 版本号 `pubspec.yaml` 的 `version:`（`1.0.0+1`，`+` 后面是构建号，每次提交必须递增）
@@ -468,7 +476,9 @@ pip3 install Pillow
 
 ### Android 渠道包（2026-10-06）
 
-- 非 Google Play / 卓易通测试：`flutter build apk --release --flavor direct`。产物 `build/app/outputs/flutter-apk/app-direct-release.apk`，不包含 Google Play Billing；当前不开放 Pro 购买。
+- 国内安卓渠道：`flutter build apk --release --flavor direct`。产物 `build/app/outputs/flutter-apk/app-direct-release.apk`，不包含 Google Play Billing；当前不开放 Pro 购买。
 - Google Play：`flutter build appbundle --release --flavor play`。产物 `build/app/outputs/bundle/playRelease/app-play-release.aab`，保留 Play Billing，商品与真实交易仍需后台配置和验收。
-- 两个渠道沿用同一包名和签名，不适合在同一安卓环境并存；鸿蒙原生版与卓易通内安卓版的数据分别保存。
-- 卓易通是否接受本地 APK、系统文件选择器是否可用，必须在 Mate 80 实测，不能以 APK 构建成功替代安装验收。
+- 两个安卓渠道沿用同一包名和本机签名，不适合在同一安卓环境并存；各商店实际分发签名需单独核对。
+- 卓易通不在支持和发布范围内，不安排相关适配或安装验收。
+
+鸿蒙包名迁移（2026-10-17）：已创建新 APP ID `6917619319382055664`，工程改为 `com.bookmovie.revisit.app.hm`。匹配的新调试/发布 Profile 均已生成并构建验证，Mate80功能验收通过；旧后台条目已清理，Android原包名已绑定；正式上架前仍须更新鸿蒙备案信息。原 Android/iOS 包名及备份 JSON 协议保持不变。
