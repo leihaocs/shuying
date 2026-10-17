@@ -15,7 +15,7 @@ set -euo pipefail
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$APP_DIR"
 
-HDC="${HDC:-$HOME/openharmony/sdk/15/openharmony/15/toolchains/hdc}"
+HDC="${HDC:-/Applications/DevEco-Studio.app/Contents/sdk/default/openharmony/toolchains/hdc}"
 if [ ! -x "$HDC" ]; then
   echo "==> 找不到 hdc：$HDC"
   exit 1
@@ -44,7 +44,7 @@ echo "==> 安装 $(basename "$HAP")"
 "$HDC" -t "$TARGETS" install "$HAP"
 
 echo "==> 启动应用"
-"$HDC" -t "$TARGETS" shell aa start -a EntryAbility -b com.bookmovie.revisit.app 2>/dev/null || true
+"$HDC" -t "$TARGETS" shell aa start -a EntryAbility -b com.bookmovie.revisit.app.hm 2>/dev/null || true
 
 echo "==> 完成。查看日志："
 echo "    $HDC -t $TARGETS shell hilog | grep -i flutter"
