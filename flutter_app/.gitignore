@@ -100,3 +100,6 @@ app.*.map.json
 
 # Hvigor local build cache
 /.hvigor/
+
+# Android Gradle generated reports and intermediate output
+/android/build/

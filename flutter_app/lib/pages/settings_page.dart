@@ -8,6 +8,7 @@ import '../widgets/sheets.dart';
 import 'data_backup_page.dart';
 import 'pro_page.dart';
 import 'privacy_policy_page.dart';
+import 'support_page.dart';
 
 /* ------------------------------------------------------------------ */
 /* 版本信息                                                            */
@@ -149,6 +150,19 @@ class SettingsPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
+                const _SectionHeader('帮助'),
+                CardBox(
+                  child: _TapRow(
+                    icon: Icons.help_outline_rounded,
+                    title: '帮助与支持',
+                    trailing: const Icon(Icons.chevron_right_rounded),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                          builder: (_) => const SupportPage()),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
                 const _SectionHeader('关于'),
                 CardBox(
                   child: Column(

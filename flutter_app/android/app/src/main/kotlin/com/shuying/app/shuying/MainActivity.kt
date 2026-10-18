@@ -16,6 +16,13 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.bookmovie.revisit/backup")
             .setMethodCallHandler { call, result ->
+                if (call.method == "openSupport") {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://leihaocs.github.io/shuying/support.html")))
+                        result.success(true)
+                    } catch (e: Exception) { result.error("support", "无法打开浏览器", null) }
+                    return@setMethodCallHandler
+                }
                 if (call.method == "storagePath") {
                     result.success(filesDir.absolutePath)
                     return@setMethodCallHandler
