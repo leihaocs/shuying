@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="书影温故三端使用帮助：本地记录、JSON备份与换机、导入合并、购买支持及问题反馈。">
+<title>书影温故 · 帮助与支持</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0; padding: 24px 20px 56px;
+    font: 15px/1.85 -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+    color: #16181d; background: #f6f7f9;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 6px; letter-spacing: -0.4px; }
+  .meta { font-size: 12.5px; color: #8a8f98; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 14px; padding: 18px 18px 4px; margin-bottom: 16px; }
+  h2 { font-size: 15.5px; margin: 0 0 10px; letter-spacing: -0.2px; }
+  p { margin: 0 0 12px; color: #3d424c; }
+  ul { margin: 0 0 12px; padding-left: 20px; color: #3d424c; }
+  li { margin-bottom: 6px; }
+  .sign { text-align: center; color: #8a8f98; font-size: 12.5px; margin-top: 20px; }
+  @media (prefers-color-scheme: dark) {
+    body { color: #eceef2; background: #101216; }
+    .card { background: #191c21; }
+    p, ul { color: #b6bcc6; }
+    .meta, .sign { color: #7c828d; }
+  }
+
+  a { color: #a34b24; text-underline-offset: 3px; overflow-wrap: anywhere; }
+  ol { padding-left: 22px; color: #3d424c; margin: 0 0 12px; }
+  @media (prefers-color-scheme: dark) { a { color: #efad7f; } ol { color: #b6bcc6; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <h1>书影温故 · 帮助与支持</h1>
+  <p class="meta">适用于 iOS、Android 与 HarmonyOS · 更新日期：2026-10-18</p>
+  <section class="card">
+    <h2>联系我们</h2>
+    <p>使用中遇到问题、发现错误或有功能建议，请发邮件至 <a href="mailto:380174722@qq.com">380174722@qq.com</a>。</p>
+    <p>反馈时请说明手机型号、系统版本、书影温故版本、安装渠道、操作步骤及预期结果，可附上已遮挡个人信息的错误截图。请勿发送账号密码、验证码、签名密钥或不必要的完整备份。</p>
+  </section>
+  <section class="card">
+    <h2>记录保存在哪里？</h2>
+    <p>阅读和观影记录保存在当前设备的应用私有存储中，不会自动上传到开发者服务器。我们无法远程找回你的本地记录。</p>
+    <p>卸载应用、清除应用数据或换机前，请先导出备份，并确认文件已保存在应用之外的安全位置。不要仅依赖手机系统备份。</p>
+  </section>
+  <section class="card">
+    <h2>如何备份与换机？</h2>
+    <ol>
+      <li>在应用中打开“设置 → 导出 / 导入记录”，导出 JSON 文件；也可以使用页面提供的文本备份功能。</li>
+      <li>把备份保存到可访问的位置，换机时通过你信任的方式传到新设备。</li>
+      <li>在新设备的书影温故中打开同一入口，选择导入备份并核对书籍、电影及记录。</li>
+    </ol>
+    <p>iOS、Android 和 HarmonyOS 使用相同的记录备份格式，可通过文件手动迁移。此功能不是云同步；设备之间不会自动同步新增、修改或删除。</p>
+  </section>
+  <section class="card">
+    <h2>导入会覆盖现有记录吗？</h2>
+    <p>导入采用合并方式，不是清空后覆盖。相同标识的记录按合并规则处理；同名但分别创建的书籍或电影可能保留为不同条目。删除不会随备份传播，导入旧备份可能恢复以前删除的条目。</p>
+    <p>操作前建议先导出当前记录。文件无效或导入失败时请保留原文件，检查是否为本应用导出的完整 JSON，并联系支持；不要为解决导入错误先卸载应用或清空数据。</p>
+  </section>
+  <section class="card">
+    <h2>安卓与鸿蒙版本能自动共享记录吗？</h2>
+    <p>不能。它们是独立安装的应用，即使同时安装在同一台手机上，也分别保存自己的记录。需要转移记录时，使用导出与合并导入功能。</p>
+  </section>
+  <section class="card">
+    <h2>Pro 与购买支持</h2>
+    <p>购买能力以当前安装渠道和版本实际开放情况为准。未开放购买的渠道无法通过其他商店的购买按钮解锁。</p>
+    <p>在支持购买的渠道，请使用原商店账号，通过应用提供的恢复购买入口恢复权益。备份文件只迁移记录，不迁移购买权益，也不保证不同商店之间互通。订单或退款问题请使用购买渠道的官方支持入口；如需协助定位，请在邮件中注明渠道与错误提示。</p>
+  </section>
+  <section class="card">
+    <h2>隐私与删除数据</h2>
+    <p>应用中的“撤回隐私政策同意”不会清空记录。“清空所有数据”用于删除本机记录，操作前请确认是否需要备份；你导出到外部的备份需要自行删除。</p>
+    <p>完整说明见 <a href="privacy.html">隐私政策</a>。</p>
+  </section>
+  <footer class="sign">书影温故 / Reel &amp; Read · <a href="privacy.html">隐私政策</a></footer>
+</main>
+</body>
+</html>
