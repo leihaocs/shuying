@@ -65,6 +65,13 @@ final class AppServices: NSObject, UIDocumentPickerDelegate {
   }
 
   func fileCall(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+    if call.method == "openSupport" {
+      guard let url = URL(string: "https://leihaocs.github.io/shuying/support.html") else {
+        result(FlutterError(code: "support", message: "支持地址无效", details: nil)); return
+      }
+      UIApplication.shared.open(url, options: [:]) { opened in result(opened) }
+      return
+    }
     if call.method == "storagePath" {
       do {
         let directory = try FileManager.default.url(for: .applicationSupportDirectory,

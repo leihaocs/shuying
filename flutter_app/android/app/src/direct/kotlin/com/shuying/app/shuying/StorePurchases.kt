@@ -11,7 +11,7 @@ class StorePurchases(activity: Activity, messenger: BinaryMessenger) {
             .setMethodCallHandler { call, result ->
                 when (call.method) {
                     "status" -> result.success(false)
-                    "product" -> result.success(null)
+                    "product" -> result.success(mapOf("purchasesEnabled" to false))
                     "buy", "restore" -> result.error("unavailable", "此渠道尚未开放购买", null)
                     else -> result.notImplemented()
                 }

@@ -5,6 +5,7 @@ import 'package:flutter/widgets.dart';
 class ProStore extends ChangeNotifier with WidgetsBindingObserver {
   static const channel = MethodChannel('com.bookmovie.revisit/purchases');
   bool isPro = false;
+  bool purchasesEnabled = true;
   bool busy = false;
   String? price;
   String? message;
@@ -32,8 +33,13 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
     try {
       isPro = await channel.invokeMethod<bool>('status') ?? false;
       final product = await channel.invokeMapMethod<String, dynamic>('product');
-      price = product?['price'] as String?;
-      message = price == null ? '购买暂不可用，请稍后重试。基础功能与备份始终免费。' : null;
+      purchasesEnabled = product?['purchasesEnabled'] != false;
+      price = purchasesEnabled ? (product?['price'] as String?) : null;
+      message = !purchasesEnabled
+          ? null
+          : price == null
+              ? '购买暂不可用，请稍后重试。基础功能与备份始终免费。'
+              : null;
     } catch (_) {
       price = null;
       message = '购买服务暂不可用，请稍后重试。基础功能与备份始终免费。';
@@ -44,7 +50,7 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> buy() async {
-    if (busy || price == null) return;
+    if (!purchasesEnabled || busy || price == null) return;
     busy = true;
     _notify();
     try {
@@ -66,7 +72,7 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> restore() async {
-    if (busy) return;
+    if (!purchasesEnabled || busy) return;
     busy = true;
     _notify();
     try {

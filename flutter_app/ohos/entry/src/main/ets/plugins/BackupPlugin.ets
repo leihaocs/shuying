@@ -8,6 +8,7 @@ import util from '@ohos.util';
 
 export default class BackupPlugin implements FlutterPlugin, MethodCallHandler {
   private channel: MethodChannel | null = null;
+  private purchases: MethodChannel | null = null;
   private busy: boolean = false;
   private context: common.UIAbilityContext;
 
@@ -16,14 +17,29 @@ export default class BackupPlugin implements FlutterPlugin, MethodCallHandler {
   onAttachedToEngine(binding: FlutterPluginBinding): void {
     this.channel = new MethodChannel(binding.getBinaryMessenger(), 'com.bookmovie.revisit/backup');
     this.channel.setMethodCallHandler(this);
+    this.purchases = new MethodChannel(binding.getBinaryMessenger(), 'com.bookmovie.revisit/purchases');
+    this.purchases.setMethodCallHandler(this);
   }
   onDetachedFromEngine(binding: FlutterPluginBinding): void {
     this.channel?.setMethodCallHandler(null);
+    this.purchases?.setMethodCallHandler(null);
   }
   onMethodCall(call: MethodCall, result: MethodResult): void {
     this.handle(call, result);
   }
   private async handle(call: MethodCall, result: MethodResult): Promise<void> {
+    if (call.method === 'status') { result.success(false); return; }
+    if (call.method === 'product') { result.success({ 'purchasesEnabled': false }); return; }
+    if (call.method === 'buy' || call.method === 'restore') {
+      result.error('unavailable', '当前版本未开放购买', null); return;
+    }
+    if (call.method === 'openSupport') {
+      try {
+        await this.context.startAbility({ action: 'ohos.want.action.viewData', uri: 'https://leihaocs.github.io/shuying/support.html' });
+        result.success(true);
+      } catch (_) { result.error('support', '无法打开浏览器', null); }
+      return;
+    }
     if (call.method === 'storagePath') { result.success(this.context.filesDir); return; }
     if (this.busy) { result.error('busy', '文件选择尚未完成', null); return; }
     if (call.method !== 'open' && call.method !== 'save') { result.notImplemented(); return; }
