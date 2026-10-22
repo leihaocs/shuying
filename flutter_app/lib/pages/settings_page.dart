@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../store/app_store.dart';
@@ -182,6 +183,23 @@ class SettingsPage extends StatelessWidget {
                       const _InfoRow(
                         label: '隐私政策版本',
                         value: PrivacyPolicyPage.version,
+                      ),
+                      const SizedBox(height: 12),
+                      const Text('APP 备案号'),
+                      const SelectableText('粤ICP备2026143055号-2A'),
+                      TextButton(
+                        onPressed: () async {
+                          const url = 'https://beian.miit.gov.cn/';
+                          try {
+                            const channel = MethodChannel('com.bookmovie.revisit/backup');
+                            if (await channel.invokeMethod<bool>('openFiling') == true) return;
+                          } catch (_) {
+                            // 无浏览器或旧原生通道时，保留手动查询方式。
+                          }
+                          await Clipboard.setData(const ClipboardData(text: url));
+                          if (context.mounted) showToast(context, '无法打开浏览器，已复制工信部备案查询网址');
+                        },
+                        child: const Text('工信部备案查询'),
                       ),
                     ],
                   ),

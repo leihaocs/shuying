@@ -16,9 +16,9 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.bookmovie.revisit/backup")
             .setMethodCallHandler { call, result ->
-                if (call.method == "openSupport") {
+                if (call.method == "openSupport" || call.method == "openFiling") {
                     try {
-                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://leihaocs.github.io/shuying/support.html")))
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(if (call.method == "openFiling") "https://beian.miit.gov.cn/" else "https://leihaocs.github.io/shuying/support.html")))
                         result.success(true)
                     } catch (e: Exception) { result.error("support", "无法打开浏览器", null) }
                     return@setMethodCallHandler
