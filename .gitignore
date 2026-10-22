@@ -7,3 +7,14 @@ dist-ssr
 
 # Hvigor local build cache
 /.hvigor/
+
+# 密钥、证书与签名配置（禁止入库）
+*.p8
+*.p12
+*.keystore
+*.jks
+*.mobileprovision
+*.p7b
+*.cer
+**/authkey*.json
+**/AuthKey_*

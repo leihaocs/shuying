@@ -33,9 +33,9 @@ export default class BackupPlugin implements FlutterPlugin, MethodCallHandler {
     if (call.method === 'buy' || call.method === 'restore') {
       result.error('unavailable', '当前版本未开放购买', null); return;
     }
-    if (call.method === 'openSupport') {
+    if (call.method === 'openSupport' || call.method === 'openFiling') {
       try {
-        await this.context.startAbility({ action: 'ohos.want.action.viewData', uri: 'https://leihaocs.github.io/shuying/support.html' });
+        await this.context.startAbility({ action: 'ohos.want.action.viewData', uri: call.method === 'openFiling' ? 'https://beian.miit.gov.cn/' : 'https://leihaocs.github.io/shuying/support.html' });
         result.success(true);
       } catch (_) { result.error('support', '无法打开浏览器', null); }
       return;
