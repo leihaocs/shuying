@@ -18,3 +18,9 @@ dist-ssr
 *.cer
 **/authkey*.json
 **/AuthKey_*
+
+# 软著材料排版临时目录：本地生成 docx/pdf 的 scratch 目录与脚本，不入库
+/.tmp-copyright-doc/
+
+# 软著源程序依据（母稿 docx/txt 及来源校验 json，本地留存，不入库）
+/软著源程序依据20261022/

@@ -1,0 +1,218 @@
+{
+  "commit": "be7ff973559a732c4aa9b33260a425716117ca17",
+  "scope": "应用业务代码及定制原生桥接实现；物理行，含文件内注释及空行；不含自动生成文件、未定制平台模板、测试、依赖及构建产物。",
+  "files": [
+    {
+      "file": "flutter_app/lib/domain/books.dart",
+      "physical_lines": 138,
+      "nonblank_lines": 122,
+      "sha256": "a37e0c57f29eca252e91cbf301311fb226d6f464ba1ec8a17505ca6327201dcf"
+    },
+    {
+      "file": "flutter_app/lib/domain/fmt.dart",
+      "physical_lines": 70,
+      "nonblank_lines": 58,
+      "sha256": "79b4f0c0315e5e8d46c0813ca9a93b33b9997b5b7650522ddf992fd5571c6c4e"
+    },
+    {
+      "file": "flutter_app/lib/domain/movies.dart",
+      "physical_lines": 23,
+      "nonblank_lines": 18,
+      "sha256": "1a0b84b9d433ca8eb1e789e2dc233cbea8ee98ee40de26d066b5bace9ec93c01"
+    },
+    {
+      "file": "flutter_app/lib/domain/year_review.dart",
+      "physical_lines": 37,
+      "nonblank_lines": 36,
+      "sha256": "8e4b7ce03cda9f5a261d0c6c3b2e0db6242a02715408e52ee2ca1ff4533bdedd"
+    },
+    {
+      "file": "flutter_app/lib/main.dart",
+      "physical_lines": 142,
+      "nonblank_lines": 131,
+      "sha256": "8585273170bf64ffd923c465d4387e2447286e85c0477db497025dd906b797e5"
+    },
+    {
+      "file": "flutter_app/lib/models/models.dart",
+      "physical_lines": 331,
+      "nonblank_lines": 283,
+      "sha256": "d08def785812fd4825b32c0b434a20dd5eda136827900b05fb052a445086f288"
+    },
+    {
+      "file": "flutter_app/lib/pages/book_detail_page.dart",
+      "physical_lines": 774,
+      "nonblank_lines": 734,
+      "sha256": "87f1bd72019f1e7b1c1dc6588d5679d9ffc90c25fc6d2940bfaf6335b920faac"
+    },
+    {
+      "file": "flutter_app/lib/pages/books_page.dart",
+      "physical_lines": 144,
+      "nonblank_lines": 132,
+      "sha256": "7865fa5f4319783cc33d569525a5d81d01ada608b33b4be97226500fbf65c1a9"
+    },
+    {
+      "file": "flutter_app/lib/pages/data_backup_page.dart",
+      "physical_lines": 275,
+      "nonblank_lines": 258,
+      "sha256": "319f8c7243fbaa9cca3304174731d9e58d94d84a21b817aeacb1a28571487307"
+    },
+    {
+      "file": "flutter_app/lib/pages/home_shell.dart",
+      "physical_lines": 246,
+      "nonblank_lines": 228,
+      "sha256": "6fe77a75c23c306e6ff82bf004e3a32c9c786beb823e275035ef30cb873ffe24"
+    },
+    {
+      "file": "flutter_app/lib/pages/movie_detail_page.dart",
+      "physical_lines": 392,
+      "nonblank_lines": 376,
+      "sha256": "3773b10fe3c77b0882042cc05de26b421ac7b8610a71bdc91df9095a76d7f516"
+    },
+    {
+      "file": "flutter_app/lib/pages/movies_page.dart",
+      "physical_lines": 95,
+      "nonblank_lines": 87,
+      "sha256": "03e61d1d31a39e8c8cf51c5cc64b3ebe49de63d2c7f3eef13ac8b3106f16a141"
+    },
+    {
+      "file": "flutter_app/lib/pages/privacy_consent_gate.dart",
+      "physical_lines": 181,
+      "nonblank_lines": 174,
+      "sha256": "d26754edb7bc06cd04bf52b42a1d196e53454b57a33e9a5beaa12c29f7a48858"
+    },
+    {
+      "file": "flutter_app/lib/pages/privacy_policy_page.dart",
+      "physical_lines": 306,
+      "nonblank_lines": 279,
+      "sha256": "393407bcf0666bfbb38ffacd75b570e597f0998cbc8234ee0267108129beb215"
+    },
+    {
+      "file": "flutter_app/lib/pages/pro_page.dart",
+      "physical_lines": 86,
+      "nonblank_lines": 83,
+      "sha256": "e7fe838f247fcd759e2f238d51dbdbd5a0e6da90f3bae05c4c0c4f9713769e6a"
+    },
+    {
+      "file": "flutter_app/lib/pages/settings_page.dart",
+      "physical_lines": 344,
+      "nonblank_lines": 323,
+      "sha256": "002a5fecc8b34ffecd2a56db5bde9722003150f2ac8f07ea1e5006186d5f6009"
+    },
+    {
+      "file": "flutter_app/lib/pages/stats_page.dart",
+      "physical_lines": 434,
+      "nonblank_lines": 411,
+      "sha256": "633931b260cf5e92ded6277770b4c8312f9245bbdb4b3b7f78b0af1f6580842b"
+    },
+    {
+      "file": "flutter_app/lib/pages/support_page.dart",
+      "physical_lines": 71,
+      "nonblank_lines": 66,
+      "sha256": "6e5f0c94a9c9fdd6134faf9ca544668839aa357b788d20829756d1f08815ddb5"
+    },
+    {
+      "file": "flutter_app/lib/pages/year_review_page.dart",
+      "physical_lines": 117,
+      "nonblank_lines": 114,
+      "sha256": "f723b235b1263c74d2a83d4677b13d57323df99521eea1a10a35e067bd1b4136"
+    },
+    {
+      "file": "flutter_app/lib/services/backup_codec.dart",
+      "physical_lines": 178,
+      "nonblank_lines": 168,
+      "sha256": "62ba253962455b49cd84d3c63aadcd034e2eb0ab9b2e794bae5239f10cb937e0"
+    },
+    {
+      "file": "flutter_app/lib/services/backup_files.dart",
+      "physical_lines": 17,
+      "nonblank_lines": 14,
+      "sha256": "0c317dd5ebd9ae22a5ab26b9f36807408f10a1d898096482dc336732e41a1d9f"
+    },
+    {
+      "file": "flutter_app/lib/services/pro_store.dart",
+      "physical_lines": 100,
+      "nonblank_lines": 92,
+      "sha256": "1e534cd3a3a797a6590612587b74221e39558b77e8130576fcbd8f3658d97a33"
+    },
+    {
+      "file": "flutter_app/lib/store/app_store.dart",
+      "physical_lines": 596,
+      "nonblank_lines": 536,
+      "sha256": "3f7b167bc0509a12aa6eed189e5c7b04450b7cfe396ca587cf32c9d277123c5e"
+    },
+    {
+      "file": "flutter_app/lib/theme/app_theme.dart",
+      "physical_lines": 207,
+      "nonblank_lines": 194,
+      "sha256": "80aaed238198562fd7a6e61c45d1a05441368e540f3e5badb12f1adfdd8c7acc"
+    },
+    {
+      "file": "flutter_app/lib/widgets/bits.dart",
+      "physical_lines": 616,
+      "nonblank_lines": 560,
+      "sha256": "0105470cdd981ec9e880ed0f860356335dcce9138f0cad3638a394566cc40c94"
+    },
+    {
+      "file": "flutter_app/lib/widgets/book_tile.dart",
+      "physical_lines": 104,
+      "nonblank_lines": 98,
+      "sha256": "e1c6092ff2ad423bac4b31922fe91c5090700f07d63b4bc0e5d5671d337d376a"
+    },
+    {
+      "file": "flutter_app/lib/widgets/movie_tile.dart",
+      "physical_lines": 92,
+      "nonblank_lines": 87,
+      "sha256": "0fcfba823e4b6ab1a7519a6cc975ab8f40a7e709278ef80f6968707fa8a0b98e"
+    },
+    {
+      "file": "flutter_app/lib/widgets/progress_ring.dart",
+      "physical_lines": 114,
+      "nonblank_lines": 101,
+      "sha256": "077027737162f77406c8ba8daeb01471459df5ea7eee13dec5b5198de3ef42d4"
+    },
+    {
+      "file": "flutter_app/lib/widgets/sheets.dart",
+      "physical_lines": 1218,
+      "nonblank_lines": 1130,
+      "sha256": "34ca25abc6c67e736df9e5953a07a01671ce3443b83132b94acbbb66c4c415e7"
+    },
+    {
+      "file": "flutter_app/android/app/src/direct/kotlin/com/shuying/app/shuying/StorePurchases.kt",
+      "physical_lines": 20,
+      "nonblank_lines": 18,
+      "sha256": "e1163e478d2d0031ba883e18573762275bad1cc702c5cd3cee0c720258bb9b0a"
+    },
+    {
+      "file": "flutter_app/android/app/src/main/kotlin/com/shuying/app/shuying/MainActivity.kt",
+      "physical_lines": 89,
+      "nonblank_lines": 83,
+      "sha256": "f9eab3c58d2bd298f2d634f381cfd2715558078f6f7fcc980b368f948d6d29d2"
+    },
+    {
+      "file": "flutter_app/android/app/src/play/kotlin/com/shuying/app/shuying/StorePurchases.kt",
+      "physical_lines": 150,
+      "nonblank_lines": 140,
+      "sha256": "a94149a8b140b85e46e36497da1d9a00d7cb07c44d9c27b7a20ede3afa968c17"
+    },
+    {
+      "file": "flutter_app/ios/Runner/AppDelegate.swift",
+      "physical_lines": 170,
+      "nonblank_lines": 156,
+      "sha256": "d844a0199dd36c9a61cce39c0becc31589da37f584224ecac5b9c36a22c51b14"
+    },
+    {
+      "file": "flutter_app/ohos/entry/src/main/ets/plugins/BackupPlugin.ets",
+      "physical_lines": 90,
+      "nonblank_lines": 88,
+      "sha256": "c033828e58b05ca1d90e6f75100e5e19ec4833c87cfc2ae746eeec8bddfae119"
+    },
+    {
+      "file": "flutter_app/ohos/entry/src/main/ets/entryability/EntryAbility.ets",
+      "physical_lines": 12,
+      "nonblank_lines": 10,
+      "sha256": "53273af3ab47aa04e4618d29c817feb5045e84747249369b8c236bc961e83d03"
+    }
+  ],
+  "total_physical_lines": 7979,
+  "total_nonblank_lines": 7388
+}
