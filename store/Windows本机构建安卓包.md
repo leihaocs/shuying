@@ -108,6 +108,13 @@ flutter run --flavor direct
 
 产物目录：`flutter_app\build\app\outputs\flutter-apk\`
 
+**版本号纪律**（与《双机出包约定.md》一致）：
+
+- 日常构建**不动 `+N`**：两端随时可打同一个版本号的包，签名一致，手机上可互相覆盖安装
+- 只有**确定要上传商店**时才递增 `+N`，且必须大于商店后台已出现过的最大 versionCode
+- 发布后 commit + push `pubspec.yaml`，让另一台机器知道进度
+- 产物按约定归档到仓库根目录 `dist\1.0.0+N\`（`dist` 已被忽略，不入库）
+
 ---
 
 ## 五、一键脚本
@@ -134,7 +141,7 @@ C:\dev\出调试包.bat
 | 3 | `pub get` 失败 | `pubspec.yaml` 里 5 处 Mac 路径 `/Users/leihao/...` | 用 `pubspec_overrides.yaml` 改指 pub.dev，**不动** `pubspec.yaml` |
 | 4 | `Type 'UnmodifiableUint8ListView' not found` | Dart 3.13 后该类被移除，`win32` 4.x/5.x 未适配 | 覆盖 `win32: ^6.4.0` |
 | 5 | `path_provider_windows` 报参数个数不匹配 | 2.2.1 依赖 `win32 <6`，与上条冲突 | 覆盖 `path_provider_windows: 2.3.0`（该版已不依赖 win32） |
-| 6 | `SharedPreferencesPlugin.java:52: 找不到符号` | 插件用了 Flutter 已移除的 v1 embedding API | `shared_preferences` 整组升到 2.5.x（支持 Flutter 3.44+） |
+| 6 | `SharedPreferencesPlugin.java:52: 找不到符号` | 插件用了 Flutter 已移除的 v1 embedding API | `shared_preferences` 整组升到 2.5.x（要求 Flutter 3.44 及以上；本机 3.47.5） |
 | 7 | `Could not close incremental caches` / `Daemon compilation failed` | Kotlin daemon 在 Windows 写增量缓存失败 | 写入 `%USERPROFILE%\.gradle\gradle.properties`：<br>`kotlin.compiler.execution.strategy=in-process`<br>`kotlin.incremental=false` |
 | 8 | Gradle 报 `Connection reset` 下载 `io.flutter:...` | 访问 `storage.googleapis.com` 被重置 | 设置 `FLUTTER_STORAGE_BASE_URL` 镜像 + `flutter precache --android` |
 
