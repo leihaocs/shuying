@@ -32,7 +32,7 @@
 - 域名已实名、ECS 已购买；**APP 备案已通过**（`粤ICP备2026143055号-2A`），鸿蒙 `.hm` 包名变更已通过；另已提交 `bookmovie-revisit.cn` 网站备案，审核中，通过前不以该域名对外提供 80/443 访问。
 - 备案当前鸿蒙包名仍为旧值。当前审核通过后，办理 APP 变更，将鸿蒙运行平台软件包名更新为 `.hm`，核对发布证书公钥/指纹；Android/iOS 原包名保持不变。若退回补正，则在允许编辑时同步修正。
 - 发布顺序：当前备案通过且各自验收、材料及商店审核齐备后，优先发布国内 iOS 与 Android；鸿蒙须再等 `.hm` 备案变更通过并同步、完成其余资质与商店审核后发布。鸿蒙不阻塞已满足条件的 iOS/Android，但不承诺商店在变更审核期间必定通过自动核验。
-- 未完成：版权材料、真实商店截图/隐私支持页复核、备案号展示与最终候选包；最新版 iOS、Android/HarmonyOS 4、HarmonyOS 6 及正式分发验收；真实支付未验收。2026-10-18 用户确认卓易通安装及功能通过，可与鸿蒙版共存。尚未正式上架，Mate80 测试通过不代表这些事项均完成。
+- 未完成：版权材料、真实商店截图/隐私支持页复核、备案号展示与最终候选包；最新版 iOS、Android/HarmonyOS 4、HarmonyOS 6 及正式分发验收；真实支付未验收。**2026-10-27：华为 Android 已审核通过并上架**（HarmonyOS NEXT 设备经卓易通分发，可与原生鸿蒙 `.hm` 版共存），旧的"排除卓易通"结论废止；商店下载安装验收仍待执行。
 
 备案操作依据：[阿里云变更备案](https://help.aliyun.com/zh/icp-filing/basic-icp-service/change-the-record)、[审核状态 FAQ](https://help.aliyun.com/zh/icp-filing/basic-icp-service/support/for-the-record-review-faq)。变更期间原备案内容依旧有效，已备案 App 正常访问不受影响；商店提审仍按其当时核验结果执行。
 
