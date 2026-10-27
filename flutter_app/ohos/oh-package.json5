@@ -14,7 +14,7 @@
   },
   "overrides": {
     "@ohos/flutter_ohos": "file:./har/flutter.har",
-    "shared_preferences_ohos": "file:./har/shared_preferences_ohos.har",
+    "shared_preferences_ohos": "../../../../flutter_packages_ohos/packages/shared_preferences/shared_preferences_ohos/ohos",
     "@ohos/flutter_module": "file:./entry"
   }
 }
