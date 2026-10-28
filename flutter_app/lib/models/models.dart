@@ -77,6 +77,7 @@ class ReadingRound {
     required this.index,
     required this.startedAt,
     this.finishedAt,
+    this.note,
     this.logs = const <ReadingLog>[],
   });
 
@@ -89,6 +90,7 @@ class ReadingRound {
 
   /// null 表示这一轮还没读完
   final DateTime? finishedAt;
+  final String? note;
 
   final List<ReadingLog> logs;
 
@@ -99,6 +101,7 @@ class ReadingRound {
     int? index,
     DateTime? startedAt,
     Object? finishedAt = kUnset,
+    Object? note = kUnset,
     List<ReadingLog>? logs,
   }) =>
       ReadingRound(
@@ -108,6 +111,7 @@ class ReadingRound {
         finishedAt: identical(finishedAt, kUnset)
             ? this.finishedAt
             : finishedAt as DateTime?,
+        note: identical(note, kUnset) ? this.note : note as String?,
         logs: logs ?? this.logs,
       );
 
@@ -116,6 +120,7 @@ class ReadingRound {
         'index': index,
         'startedAt': isoOf(startedAt),
         if (finishedAt != null) 'finishedAt': isoOf(finishedAt!),
+        if (note != null) 'note': note,
         'logs': logs.map((l) => l.toJson()).toList(),
       };
 
@@ -125,6 +130,7 @@ class ReadingRound {
         startedAt: _parseDate(j['startedAt']),
         finishedAt:
             j['finishedAt'] == null ? null : _parseDate(j['finishedAt']),
+        note: j['note'] as String?,
         logs: ((j['logs'] as List<dynamic>?) ?? const [])
             .map((e) => ReadingLog.fromJson((e as Map).cast<String, dynamic>()))
             .toList(),
@@ -135,7 +141,8 @@ class Book {
   const Book({
     required this.id,
     required this.title,
-    required this.author,
+    this.author = '',
+    this.edition,
     this.totalPages,
     this.cover = '📖',
     this.accent = 0xFFB4552D,
@@ -148,6 +155,9 @@ class Book {
   final String id;
   final String title;
   final String author;
+
+  /// 选填：出版社或版本说明。
+  final String? edition;
 
   /// 选填：总页数
   final int? totalPages;
@@ -167,6 +177,7 @@ class Book {
     String? id,
     String? title,
     String? author,
+    Object? edition = kUnset,
     Object? totalPages = kUnset,
     String? cover,
     int? accent,
@@ -179,6 +190,7 @@ class Book {
         id: id ?? this.id,
         title: title ?? this.title,
         author: author ?? this.author,
+        edition: identical(edition, kUnset) ? this.edition : edition as String?,
         totalPages: identical(totalPages, kUnset)
             ? this.totalPages
             : totalPages as int?,
@@ -194,6 +206,7 @@ class Book {
         'id': id,
         'title': title,
         'author': author,
+        if (edition != null) 'edition': edition,
         if (totalPages != null) 'totalPages': totalPages,
         'cover': cover,
         'accent': accent,
@@ -207,6 +220,7 @@ class Book {
         id: (j['id'] ?? uid('bk_')) as String,
         title: (j['title'] ?? '') as String,
         author: (j['author'] ?? '') as String,
+        edition: j['edition'] as String?,
         totalPages: (j['totalPages'] as num?)?.toInt(),
         cover: (j['cover'] as String?) ?? '📖',
         accent: (j['accent'] as num?)?.toInt() ?? 0xFFB4552D,
@@ -264,7 +278,7 @@ class Movie {
   const Movie({
     required this.id,
     required this.title,
-    required this.director,
+    this.director = '',
     this.year,
     this.note,
     required this.createdAt,

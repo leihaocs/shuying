@@ -65,6 +65,7 @@ final class AppServices: NSObject, UIDocumentPickerDelegate {
   }
 
   func fileCall(_ call: FlutterMethodCall, _ result: @escaping FlutterResult) {
+    if call.method == "seedDemoData" { result(true); return }
     if call.method == "openSupport" || call.method == "openFiling" {
       guard let url = URL(string: call.method == "openFiling" ? "https://beian.miit.gov.cn/" : "https://leihaocs.github.io/shuying/support.html") else {
         result(FlutterError(code: "support", message: "支持地址无效", details: nil)); return

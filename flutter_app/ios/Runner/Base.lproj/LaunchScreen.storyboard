@@ -16,13 +16,24 @@
                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" image="LaunchImage" translatesAutoresizingMaskIntoConstraints="NO" id="YRO-k0-Ey4">
-                            </imageView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="📖" textAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="YRO-k0-Ey4">
+                                <fontDescription key="fontDescription" type="system" pointSize="56"/>
+                            </label>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="书影温故" textAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="name-6b-2t3">
+                                <fontDescription key="fontDescription" type="system" weight="semibold" pointSize="22"/>
+                                <color key="textColor" systemColor="labelColor"/>
+                            </label>
                         </subviews>
-                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                        <color key="backgroundColor" name="LaunchBackground"/>
                         <constraints>
                             <constraint firstItem="YRO-k0-Ey4" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="1a2-6s-vTC"/>
-                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="4X2-HB-R7a"/>
+                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" constant="-30" id="4X2-HB-R7a"/>
+                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="width" constant="84" id="icon-width"/>
+                            <constraint firstItem="YRO-k0-Ey4" firstAttribute="height" constant="76" id="icon-height"/>
+                            <constraint firstItem="name-6b-2t3" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="name-center-x"/>
+                            <constraint firstItem="name-6b-2t3" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" constant="42" id="name-center-y"/>
+                            <constraint firstItem="name-6b-2t3" firstAttribute="width" constant="220" id="name-width"/>
+                            <constraint firstItem="name-6b-2t3" firstAttribute="height" constant="34" id="name-height"/>
                         </constraints>
                     </view>
                 </viewController>
@@ -32,6 +43,11 @@
         </scene>
     </scenes>
     <resources>
-        <image name="LaunchImage" width="168" height="185"/>
+        <namedColor name="LaunchBackground">
+            <color red="0.968627" green="0.956863" blue="0.937255" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <systemColor name="labelColor">
+            <color white="0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
     </resources>
 </document>

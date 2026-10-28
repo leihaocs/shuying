@@ -105,6 +105,16 @@ class MovieDetailPage extends StatelessWidget {
                           },
                         ),
                       ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: AppButton(
+                          label: '补记往期',
+                          kind: BtnKind.soft,
+                          expand: true,
+                          onPressed: () =>
+                              showWatchSheet(context, movie: movie, past: true),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 22),
@@ -181,7 +191,8 @@ class MovieDetailPage extends StatelessWidget {
                         const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                     child: Column(
                       children: [
-                        _InfoRow('导演', movie.director),
+                        _InfoRow('导演',
+                            movie.director.isEmpty ? '—' : movie.director),
                         _InfoRow('上映年份', movie.year ?? '—'),
                         _InfoRow('加入时间', formatDate(movie.createdAt)),
                       ],
@@ -304,7 +315,9 @@ class _WatchTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
                     children: [
                       Text(
                         relativeDay(watch.at),
@@ -314,9 +327,8 @@ class _WatchTile extends StatelessWidget {
                           color: c.text,
                         ),
                       ),
-                      const SizedBox(width: 6),
                       Text(
-                        formatDate(watch.at),
+                        formatDateTime(watch.at),
                         style: TextStyle(fontSize: 11.5, color: c.text3),
                       ),
                     ],
@@ -338,6 +350,13 @@ class _WatchTile extends StatelessWidget {
                   ],
                 ],
               ),
+            ),
+            IconButton(
+              icon: Icon(Icons.edit_outlined, size: 16, color: c.text3),
+              splashRadius: 18,
+              tooltip: '修改',
+              onPressed: () =>
+                  showWatchSheet(context, movie: movie, watch: watch),
             ),
             IconButton(
               icon: Icon(Icons.close_rounded, size: 16, color: c.text3),

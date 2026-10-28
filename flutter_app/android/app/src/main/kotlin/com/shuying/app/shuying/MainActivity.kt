@@ -27,6 +27,10 @@ class MainActivity : FlutterActivity() {
                     result.success(filesDir.absolutePath)
                     return@setMethodCallHandler
                 }
+                if (call.method == "seedDemoData") {
+                    result.success(BuildConfig.FLAVOR == "play")
+                    return@setMethodCallHandler
+                }
                 if (pending != null) {
                     result.error("busy", "文件选择尚未完成", null)
                     return@setMethodCallHandler

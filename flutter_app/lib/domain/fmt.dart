@@ -15,6 +15,14 @@ String formatDateTime(DateTime? d) {
   return '${formatDate(d)} ${_pad(d.hour)}:${_pad(d.minute)}';
 }
 
+/// 只选日期时，保存为该日期 + 当前操作时分秒；主动选过时间则保留。
+DateTime recordTimestamp(DateTime date,
+    {bool explicitTime = false, DateTime? now}) {
+  final time = explicitTime ? date : (now ?? DateTime.now());
+  return DateTime(date.year, date.month, date.day, time.hour, time.minute,
+      time.second, time.millisecond, time.microsecond);
+}
+
 /// ISO -> 「今天 / 昨天 / 前天 / N天前 / 2026-09-21」
 String relativeDay(DateTime? d) {
   if (d == null) return '—';

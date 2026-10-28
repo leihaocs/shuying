@@ -24,63 +24,67 @@ class _ProPageState extends State<ProPage> {
     final pro = context.watch<ProStore>();
     return Scaffold(
       appBar: AppBar(title: const Text('书影温故 Pro')),
-      body: ListView(padding: const EdgeInsets.all(20), children: [
-        Text(pro.isPro ? '你的年度书影档案已解锁' : '让每一次阅读与观影都有回顾',
-            style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 20),
-        // Column is not const in the older HarmonyOS Flutter SDK.
-        // ignore: prefer_const_constructors
-        CardBox(
+      body: SafeArea(
+          top: false,
+          child: ListView(padding: const EdgeInsets.all(20), children: [
+            Text(pro.isPro ? '你的年度书影档案已解锁' : '让每一次阅读与观影都有回顾',
+                style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: 20),
+            // Column is not const in the older HarmonyOS Flutter SDK.
             // ignore: prefer_const_constructors
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('普通版 · 免费'),
-          const SizedBox(height: 8),
-          const Text('不限量书籍与电影、多轮记录、基础统计、明暗主题、JSON 文件导出和合并导入。'),
-          const SizedBox(height: 20),
-          Text(pro.purchasesEnabled ? 'Pro · 一次购买' : 'Pro · 功能介绍'),
-          const SizedBox(height: 8),
-          const Text('按年份查看阅读时长、页数、完成次数、阅读天数、观影次数与平均评分；12 个月趋势，复制年度回顾。'),
-        ])),
-        const SizedBox(height: 16),
-        Text(pro.purchasesEnabled
-            ? '购买适用于当前商店账号支持的设备，不包含跨系统会员、云同步或订阅。记录备份可在三端免费迁移。'
-            : '当前版本暂未开放 Pro 购买，可预览示例年度回顾。基础记录、统计与备份功能免费使用。'),
-        const SizedBox(height: 20),
-        if (pro.isPro)
-          ElevatedButton(
-              onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                      builder: (_) => const YearReviewPage())),
-              child: const Text('查看我的年度回顾'))
-        else ...[
-          if (pro.purchasesEnabled)
-            ElevatedButton(
-                onPressed: pro.busy || pro.price == null ? null : pro.buy,
-                child: Text(pro.busy
-                    ? '正在连接商店…'
-                    : pro.price == null
-                        ? '购买暂不可用'
-                        : '一次购买解锁 · ${pro.price}')),
-          TextButton(
-              onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute<void>(
-                      builder: (_) => const YearReviewPage(preview: true))),
-              child: const Text('预览示例年度回顾')),
-        ],
-        if (pro.purchasesEnabled)
-          TextButton(
-              onPressed: pro.busy ? null : pro.restore,
-              child: const Text('恢复购买')),
-        if (pro.purchasesEnabled)
-          TextButton(
-              onPressed: pro.busy ? null : pro.refresh,
-              child: const Text('刷新商店状态')),
-        if (pro.message != null)
-          Text(pro.message!, key: const Key('purchase-message')),
-      ]),
+            CardBox(
+                // ignore: prefer_const_constructors
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  const Text('普通版 · 免费'),
+                  const SizedBox(height: 8),
+                  const Text('不限量书籍与电影、多轮记录、基础统计、明暗主题、JSON 文件导出和合并导入。'),
+                  const SizedBox(height: 20),
+                  Text(pro.purchasesEnabled ? 'Pro · 一次购买' : 'Pro · 功能介绍'),
+                  const SizedBox(height: 8),
+                  const Text(
+                      '按年份查看阅读时长、页数、完成次数、阅读天数、观影次数与平均评分；12 个月趋势，复制年度回顾。'),
+                ])),
+            const SizedBox(height: 16),
+            Text(pro.purchasesEnabled
+                ? '购买适用于当前商店账号支持的设备，不包含跨系统会员、云同步或订阅。记录备份可在三端免费迁移。'
+                : '当前版本暂未开放 Pro 购买，可预览示例年度回顾。基础记录、统计与备份功能免费使用。'),
+            const SizedBox(height: 20),
+            if (pro.isPro)
+              ElevatedButton(
+                  onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                          builder: (_) => const YearReviewPage())),
+                  child: const Text('查看我的年度回顾'))
+            else ...[
+              if (pro.purchasesEnabled)
+                ElevatedButton(
+                    onPressed: pro.busy || pro.price == null ? null : pro.buy,
+                    child: Text(pro.busy
+                        ? '正在连接商店…'
+                        : pro.price == null
+                            ? '购买暂不可用'
+                            : '一次购买解锁 · ${pro.price}')),
+              TextButton(
+                  onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                          builder: (_) => const YearReviewPage(preview: true))),
+                  child: const Text('预览示例年度回顾')),
+            ],
+            if (pro.purchasesEnabled)
+              TextButton(
+                  onPressed: pro.busy ? null : pro.restore,
+                  child: const Text('恢复购买')),
+            if (pro.purchasesEnabled)
+              TextButton(
+                  onPressed: pro.busy ? null : pro.refresh,
+                  child: const Text('刷新商店状态')),
+            if (pro.message != null)
+              Text(pro.message!, key: const Key('purchase-message')),
+          ])),
     );
   }
 }

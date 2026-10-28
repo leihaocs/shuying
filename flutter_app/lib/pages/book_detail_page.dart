@@ -134,7 +134,8 @@ class BookDetailPage extends StatelessWidget {
                     for (final r in bl.allRounds(book))
                       Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: _RoundCard(book: book, round: r),
+                        child: _RoundCard(
+                            key: ValueKey(r.id), book: book, round: r),
                       ),
                   ],
                   const SizedBox(height: 24),
@@ -144,7 +145,9 @@ class BookDetailPage extends StatelessWidget {
                         const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
                     child: Column(
                       children: [
-                        _InfoRow('作者', book.author),
+                        _InfoRow('作者', book.author.isEmpty ? '—' : book.author),
+                        _InfoRow('出版社 / 版本', book.edition ?? '—',
+                            multiline: true),
                         _InfoRow(
                             '总页数',
                             book.totalPages == null
@@ -211,7 +214,7 @@ class _Hero extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                book.author,
+                book.author.isEmpty ? (book.edition ?? '') : book.author,
                 style: TextStyle(fontSize: 13.5, color: c.text2),
               ),
               const SizedBox(height: 10),
@@ -431,6 +434,15 @@ class _Actions extends StatelessWidget {
               ),
             ],
           ),
+        if (active != null) ...[
+          const SizedBox(height: 10),
+          AppButton(
+            label: '补记往期',
+            kind: BtnKind.soft,
+            expand: true,
+            onPressed: () => showPastRoundSheet(context, book: book),
+          ),
+        ],
       ],
     );
   }
@@ -491,7 +503,9 @@ class _LogTimeline extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Row(
+                                  Wrap(
+                                    spacing: 6,
+                                    runSpacing: 4,
                                     children: [
                                       Text(
                                         relativeDay(l.at),
@@ -501,7 +515,6 @@ class _LogTimeline extends StatelessWidget {
                                           color: c.text,
                                         ),
                                       ),
-                                      const SizedBox(width: 6),
                                       Text(
                                         formatDateTime(l.at).substring(11),
                                         style: TextStyle(
@@ -520,7 +533,8 @@ class _LogTimeline extends StatelessWidget {
                                         _How('📄 ${l.pages} 页'),
                                       if (l.minutes != null)
                                         _How('⏱ ${formatDuration(l.minutes)}'),
-                                      if (l.progress != null)
+                                      // 进度只属于正在读的这一轮。
+                                      if (l.progress != null && round.isActive)
                                         _How('📈 进度 ${l.progress}%'),
                                       if (l.pages == null &&
                                           l.minutes == null &&
@@ -555,6 +569,18 @@ class _LogTimeline extends StatelessWidget {
                                 ],
                               ),
                             ),
+                            IconButton(
+                              icon: Icon(Icons.edit_outlined,
+                                    size: 16, color: c.text3),
+                                splashRadius: 18,
+                                tooltip: '修改',
+                                onPressed: () => showLogSheet(
+                                  context,
+                                  book: book,
+                                  round: round,
+                                  log: l,
+                                ),
+                              ),
                             IconButton(
                               icon: Icon(Icons.close_rounded,
                                   size: 16, color: c.text3),
@@ -607,7 +633,7 @@ class _How extends StatelessWidget {
 /* ------------------------------------------------------------------ */
 
 class _RoundCard extends StatefulWidget {
-  const _RoundCard({required this.book, required this.round});
+  const _RoundCard({super.key, required this.book, required this.round});
 
   final Book book;
   final ReadingRound round;
@@ -709,6 +735,17 @@ class _RoundCardState extends State<_RoundCard> {
               ),
             ],
           ),
+          // 这一轮的总结感想（读完整轮才有）。
+          if (r.note != null && r.note!.trim().isNotEmpty) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: Text(
+                r.note!,
+                style: TextStyle(fontSize: 13, color: c.text2, height: 1.6),
+              ),
+            ),
+          ],
           if (r.logs.isNotEmpty) ...[
             const SizedBox(height: 10),
             Row(
@@ -726,6 +763,13 @@ class _RoundCardState extends State<_RoundCard> {
               _LogTimeline(book: widget.book, round: r),
             ],
           ],
+          const SizedBox(height: 8),
+          AppButton(
+            label: done ? '修改本轮记录' : '补记阅读记录',
+            kind: BtnKind.soft,
+            expand: true,
+            onPressed: () => showLogSheet(context, book: widget.book, round: r),
+          ),
         ],
       ),
     );

@@ -41,6 +41,7 @@ class _DataBackupPageState extends State<DataBackupPage> {
   Future<void> _copy() async {
     if (_exported.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: _exported));
+    if (!mounted) return;
     _msg('已复制到剪贴板（${_exported.length} 个字符）');
   }
 
@@ -97,7 +98,8 @@ class _DataBackupPageState extends State<DataBackupPage> {
 
     return Scaffold(
       backgroundColor: c.bg,
-      body: Column(
+      body: SafeArea(
+          child: Column(
         children: [
           const NavBar(title: '数据备份'),
           Expanded(
@@ -226,7 +228,7 @@ class _DataBackupPageState extends State<DataBackupPage> {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 

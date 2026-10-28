@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 import '../domain/books.dart' as bl;
@@ -50,9 +49,7 @@ class CardBox extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: c.isDark
-                ? const Color(0x66000000)
-                : const Color(0x0D2B2622),
+            color: c.isDark ? const Color(0x66000000) : const Color(0x0D2B2622),
             blurRadius: 2,
             offset: const Offset(0, 1),
           ),
@@ -85,7 +82,8 @@ class SectionTitle extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
         children: [
-          Text(
+          Expanded(
+              child: Text(
             text,
             style: TextStyle(
               fontSize: 13,
@@ -93,8 +91,7 @@ class SectionTitle extends StatelessWidget {
               color: c.text3,
               letterSpacing: 0.6,
             ),
-          ),
-          const Spacer(),
+          )),
           if (trailing != null) trailing!,
         ],
       ),
@@ -155,7 +152,8 @@ class StatGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         const gap = 10.0;
-        final w = (constraints.maxWidth - gap * (cells.length - 1)) / cells.length;
+        final w =
+            (constraints.maxWidth - gap * (cells.length - 1)) / cells.length;
         return Wrap(
           spacing: gap,
           runSpacing: gap,
@@ -187,7 +185,9 @@ class EmptyState extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 56, horizontal: 24),
       child: Column(
         children: [
-          Opacity(opacity: 0.55, child: Text(icon, style: const TextStyle(fontSize: 44))),
+          Opacity(
+              opacity: 0.55,
+              child: Text(icon, style: const TextStyle(fontSize: 44))),
           const SizedBox(height: 12),
           Text(
             title,
@@ -377,14 +377,12 @@ class AppButton extends StatelessWidget {
 
     final enabled = onPressed != null;
     final child = Container(
-      height: 46,
-      padding: const EdgeInsets.symmetric(horizontal: 18),
+      constraints: const BoxConstraints(minHeight: 46),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(13),
-        border: kind == BtnKind.ghost
-            ? Border.all(color: c.border)
-            : null,
+        border: kind == BtnKind.ghost ? Border.all(color: c.border) : null,
         gradient: kind == BtnKind.primary ? c.accentGradient : null,
         boxShadow: kind == BtnKind.primary
             ? [
@@ -405,14 +403,18 @@ class AppButton extends StatelessWidget {
             Icon(icon, size: 17, color: fg),
             const SizedBox(width: 7),
           ],
-          Text(
+          Flexible(
+              child: Text(
             label,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w600,
               color: fg,
             ),
-          ),
+          )),
         ],
       ),
     );
@@ -542,9 +544,8 @@ class StarRow extends StatelessWidget {
                     ? Icons.star_rounded
                     : Icons.star_outline_rounded,
                 size: size,
-                color: (rating ?? 0) >= i
-                    ? const Color(0xFFE0A33A)
-                    : c.surface3,
+                color:
+                    (rating ?? 0) >= i ? const Color(0xFFE0A33A) : c.surface3,
               ),
             ),
           ),

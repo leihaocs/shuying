@@ -3,9 +3,11 @@ import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show MissingPluginException;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/fmt.dart';
+import '../domain/books.dart' show chronologicalRounds, roundReflection;
 import '../models/models.dart';
 import '../services/backup_codec.dart';
 import '../services/backup_files.dart';
@@ -17,7 +19,8 @@ import '../services/backup_files.dart';
 class BookInput {
   BookInput({
     required this.title,
-    required this.author,
+    this.author = '',
+    this.edition,
     this.totalPages,
     this.cover,
     this.accent,
@@ -26,6 +29,7 @@ class BookInput {
 
   final String title;
   final String author;
+  final String? edition;
   final int? totalPages;
   final String? cover;
   final int? accent;
@@ -35,7 +39,7 @@ class BookInput {
 class MovieInput {
   MovieInput({
     required this.title,
-    required this.director,
+    this.director = '',
     this.year,
     this.note,
   });
@@ -66,15 +70,11 @@ class PastRoundInput {
   PastRoundInput({
     required this.startedAt,
     required this.finishedAt,
-    this.pages,
-    this.minutes,
     this.note,
   });
 
   final DateTime startedAt;
   final DateTime finishedAt;
-  final int? pages;
-  final int? minutes;
   final String? note;
 }
 
@@ -87,10 +87,13 @@ class PastRoundInput {
 /// 存储层被刻意收敛到 [load] / [flush] 两个方法里，
 /// 换成 sqflite、Hive 或鸿蒙专用存储时只需要改这两处。
 class AppStore extends ChangeNotifier with WidgetsBindingObserver {
-  AppStore({this.dataDirectory}) {
+  AppStore({this.dataDirectory, this.seedDemoData}) {
     WidgetsBinding.instance.addObserver(this);
   }
   final String? dataDirectory;
+
+  /// 默认由原生发行渠道决定；显式值仅供测试与非发布截图模式使用。
+  final bool? seedDemoData;
   File? _stateFile;
   static const String _kState = 'shuying.state.v1';
   static const String _kTheme = 'shuying.theme.v1';
@@ -118,6 +121,7 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
   String? storageError;
   bool loadFailed = false;
   bool _disposed = false;
+  bool _purgeDeletedData = false;
   int _savingJobs = 0;
   bool get saving => _savingJobs > 0;
 
@@ -152,7 +156,7 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
           ? await _stateFile!.readAsString()
           : _prefs!.getString(_kState);
       if (raw == null) {
-        _seed();
+        if (await _shouldSeedDemoData()) _seed();
       } else {
         final data = decodeBackup(raw, legacy: true);
         _books
@@ -173,6 +177,16 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
     if (!loadFailed) _schedulePersist();
   }
 
+  Future<bool> _shouldSeedDemoData() async {
+    if (seedDemoData != null) return seedDemoData!;
+    try {
+      return await BackupFiles.channel.invokeMethod<bool>('seedDemoData') ??
+          false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
   // 每次修改立即排队写入，不再等待 250ms；按顺序保存不可变快照。
   void _schedulePersist() {
     if (loadFailed || _prefs == null) return;
@@ -182,14 +196,29 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
     });
     final theme = _themeMode == ThemeMode.dark ? 'dark' : 'light';
     final consent = _privacyConsent;
+    final purgeDeletedData = _purgeDeletedData;
     _savingJobs++;
     _saveQueue = _saveQueue.then((_) async {
       try {
         final file = _stateFile!;
         final temporary = File('${file.path}.tmp');
         await temporary.writeAsString(snapshot, flush: true);
-        if (await file.exists()) await file.copy('${file.path}.previous');
+        if (!purgeDeletedData && await file.exists()) {
+          await file.copy('${file.path}.previous');
+        }
         await temporary.rename(file.path);
+        if (purgeDeletedData) {
+          final previous = File('${file.path}.previous');
+          if (await previous.exists()) await previous.delete();
+          // 先覆写空值，避免原生异步删除尚未落盘时旧记录仍能恢复。
+          if (_prefs!.containsKey(_kState)) {
+            if (!await _prefs!.setString(_kState, '{"books":[],"movies":[]}') ||
+                !await _prefs!.remove(_kState)) {
+              throw StateError('旧记录清理失败');
+            }
+          }
+          _purgeDeletedData = false;
+        }
         if (!await _prefs!.setString(_kTheme, theme) ||
             !await _prefs!.setBool(_kPrivacy, consent) ||
             !await _prefs!
@@ -198,6 +227,7 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
         }
         storageError = null;
       } catch (_) {
+        if (purgeDeletedData) _purgeDeletedData = true;
         storageError = '记录尚未保存成功，请重试保存或立即导出备份，勿关闭应用。';
       }
       _savingJobs--;
@@ -292,7 +322,9 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
   void _patchBook(String id, Book Function(Book) fn) {
     final i = _books.indexWhere((b) => b.id == id);
     if (i < 0) return;
-    _books[i] = fn(_books[i]).copyWith(updatedAt: DateTime.now());
+    final updated = fn(_books[i]);
+    _books[i] = updated.copyWith(
+        rounds: chronologicalRounds(updated.rounds), updatedAt: DateTime.now());
     _touch();
   }
 
@@ -311,6 +343,7 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
       id: uid('bk_'),
       title: input.title.trim(),
       author: input.author.trim(),
+      edition: _nullIfBlank(input.edition),
       totalPages: input.totalPages,
       cover: input.cover ?? '📖',
       accent: input.accent ?? 0xFFB4552D,
@@ -328,6 +361,7 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
         (b) => b.copyWith(
           title: input.title.trim(),
           author: input.author.trim(),
+          edition: _nullIfBlank(input.edition),
           totalPages: input.totalPages,
           cover: input.cover ?? b.cover,
           accent: input.accent ?? b.accent,
@@ -356,26 +390,90 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
       });
 
   void addLog(String bookId, String roundId, LogInput log) =>
-      _patchBook(bookId, (b) {
-        return b.copyWith(
-          rounds: b.rounds
-              .map((r) => r.id == roundId
-                  ? r.copyWith(
-                      logs: [
-                        ...r.logs,
-                        ReadingLog(
-                          id: uid('lg_'),
-                          at: log.at,
-                          pages: log.pages,
-                          minutes: log.minutes,
-                          progress: log.progress,
-                          note: _nullIfBlank(log.note),
-                        ),
-                      ],
-                    )
-                  : r)
-              .toList(),
-        );
+      _saveLog(bookId, roundId, log);
+
+  void updateLog(String bookId, String roundId, String logId, LogInput log) =>
+      _saveLog(bookId, roundId, log, logId: logId);
+
+  void _saveLog(String bookId, String roundId, LogInput input, {String? logId}) =>
+      _patchBook(bookId, (book) {
+        final rounds = book.rounds.map((round) {
+          if (round.id != roundId) return round;
+          final old = round.logs.where((log) => log.id == logId).toList();
+          if (logId != null && old.isEmpty) return round;
+          // 已结束的轮次可以改已有记录，但不再增加新的阅读次数。
+          if (logId == null && !round.isActive) {
+            throw StateError('这一轮已经读完，不能新增阅读次数，只能修改已有记录');
+          }
+          final log = ReadingLog(
+              id: logId ?? uid('lg_'),
+              at: input.at,
+              pages: input.pages,
+              minutes: input.minutes,
+              progress: input.progress,
+              note: _nullIfBlank(input.note));
+          final logs = logId == null
+              ? [...round.logs, log]
+              : round.logs
+                  .map((value) => value.id == logId ? log : value)
+                  .toList();
+          // 改过时间后按新时间重排，最新的一条排在最前面。
+          final ordered = _logsDesc(logs);
+          // 进度只属于还在读的这一轮，且只能往前走。
+          if (round.isActive) _checkProgresses(ordered);
+          final earliest =
+              ordered.isEmpty ? round.startedAt : ordered.last.at;
+          final movedStart = old.isNotEmpty && old.single.at == round.startedAt;
+          return round.copyWith(
+            logs: ordered,
+            startedAt: movedStart || earliest.isBefore(round.startedAt)
+                ? earliest
+                : round.startedAt,
+          );
+        }).toList();
+        // 记录时间变化可能跨轮，保存后重新按开始时间编号。
+        return book.copyWith(rounds: chronologicalRounds(rounds));
+      });
+
+  /// 轮内记录按时间倒序存放（最新的一条在最前面）。
+  List<ReadingLog> _logsDesc(List<ReadingLog> logs) {
+    final list = [...logs];
+    list.sort((a, b) => b.at.compareTo(a.at));
+    return list;
+  }
+
+  /// 阅读进度只能往前走：按时间排好序后，后面一条不能小于它前一条。
+  /// 中间补记一条也要落在相邻两次之间，所以整轮一起校。没填进度的跳过。
+  void _checkProgresses(List<ReadingLog> logsDesc) {
+    int? previous;
+    for (final log in logsDesc.reversed) {
+      final progress = log.progress;
+      if (progress == null) continue;
+      if (previous != null && progress < previous) {
+        throw ArgumentError('进度不能小于上一次记录的进度（$previous% → $progress%）');
+      }
+      previous = progress;
+    }
+  }
+
+  void updateRound(String bookId, String roundId, {required DateTime startedAt,
+      DateTime? finishedAt, required String note}) =>
+      _patchBook(bookId, (book) {
+        final rounds = book.rounds.map((round) {
+          if (round.id != roundId) return round;
+          final end = round.isActive ? null : (finishedAt ?? round.finishedAt);
+          if (end != null && end.isBefore(startedAt)) {
+            throw ArgumentError('结束时间不能早于开始时间');
+          }
+          if (round.isActive &&
+              round.logs.any((log) => log.at.isBefore(startedAt))) {
+            throw ArgumentError('开始时间不能晚于本轮最早阅读记录');
+          }
+          return round.copyWith(
+              startedAt: startedAt, finishedAt: end, note: note.trim());
+        }).toList();
+        // 起止时间改了，轮次顺序和编号重排。
+        return book.copyWith(rounds: chronologicalRounds(rounds));
       });
 
   void removeLog(String bookId, String logId) => _patchBook(
@@ -395,41 +493,26 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
         (b) => b.copyWith(
           rounds: b.rounds
               .map((r) => (r.id == roundId && r.isActive)
-                  ? r.copyWith(finishedAt: DateTime.now())
+                  ? r.copyWith(finishedAt: DateTime.now(), note: roundReflection(r))
                   : r)
               .toList(),
         ),
       );
 
-  /// 补记往期已读（含起止时间）
+  /// 历史轮次只记录起止时间与感想，不制造进度明细。
   void addPastRound(String bookId, PastRoundInput input) =>
-      _patchBook(bookId, (b) {
-        final hasDetail = input.pages != null ||
-            input.minutes != null ||
-            (input.note != null && input.note!.trim().isNotEmpty);
-        final logs = <ReadingLog>[
-          if (hasDetail)
-            ReadingLog(
-              id: uid('lg_'),
-              at: input.finishedAt,
-              pages: input.pages,
-              minutes: input.minutes,
-              progress: 100,
-              note: _nullIfBlank(input.note),
-            ),
-        ];
-        return b.copyWith(
-          rounds: [
-            ...b.rounds,
-            ReadingRound(
-              id: uid('rd_'),
-              index: b.rounds.length + 1,
-              startedAt: input.startedAt,
-              finishedAt: input.finishedAt,
-              logs: logs,
-            ),
-          ],
-        );
+      _patchBook(bookId, (book) {
+        if (input.finishedAt.isBefore(input.startedAt)) {
+          throw ArgumentError('结束时间不能早于开始时间');
+        }
+        final next = ReadingRound(
+            id: uid('rd_'),
+            index: book.rounds.length + 1,
+            startedAt: input.startedAt,
+            finishedAt: input.finishedAt,
+            note: input.note?.trim());
+        // 补记的时间可能在更早之前，插入后重新按时间编号。
+        return book.copyWith(rounds: chronologicalRounds([...book.rounds, next]));
       });
 
   /// 删除某一轮，并重排 index
@@ -476,12 +559,19 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
     _touch();
   }
 
+  /// 观影记录按时间倒序存放（最近一次在最前面）。
+  List<WatchRecord> _watchesDesc(List<WatchRecord> watches) {
+    final list = [...watches];
+    list.sort((a, b) => b.at.compareTo(a.at));
+    return list;
+  }
+
   void addWatch(String movieId,
           {required DateTime at, int? rating, String? note}) =>
       _patchMovie(
         movieId,
         (m) => m.copyWith(
-          watches: [
+          watches: _watchesDesc([
             ...m.watches,
             WatchRecord(
               id: uid('wt_'),
@@ -489,9 +579,16 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
               rating: rating,
               note: _nullIfBlank(note),
             ),
-          ],
+          ]),
         ),
       );
+
+  void updateWatch(String movieId, String watchId,
+          {required DateTime at, int? rating, String? note}) =>
+      _patchMovie(movieId, (movie) => movie.copyWith(
+          watches: _watchesDesc(movie.watches.map((watch) => watch.id == watchId
+              ? WatchRecord(id: watch.id, at: at, rating: rating,
+                  note: _nullIfBlank(note)) : watch).toList())));
 
   void removeWatch(String movieId, String watchId) => _patchMovie(
         movieId,
@@ -584,6 +681,7 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
 
   /// 清空示例/全部数据
   void clearAll() {
+    _purgeDeletedData = true;
     _books.clear();
     _movies.clear();
     _touch();

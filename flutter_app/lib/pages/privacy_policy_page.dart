@@ -31,12 +31,13 @@ class PrivacyPolicyPage extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: c.bg,
-      body: Column(
+      body: SafeArea(
+          child: Column(
         children: [
           const NavBar(title: '隐私政策'),
           Expanded(child: body),
         ],
-      ),
+      )),
     );
   }
 }
@@ -60,7 +61,8 @@ class _PrivacyPolicyBody extends StatelessWidget {
                   children: [
                     const Text('🔒', style: TextStyle(fontSize: 22)),
                     const SizedBox(width: 8),
-                    Text(
+                    Expanded(
+                        child: Text(
                       '书影温故 · 隐私政策',
                       style: TextStyle(
                         fontSize: 17,
@@ -68,7 +70,7 @@ class _PrivacyPolicyBody extends StatelessWidget {
                         color: c.text,
                         letterSpacing: -0.3,
                       ),
-                    ),
+                    )),
                   ],
                 ),
                 const SizedBox(height: 6),

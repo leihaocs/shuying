@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../domain/books.dart' as bl;
 import '../domain/fmt.dart';
 import '../models/models.dart';
+import '../services/pro_store.dart';
 import '../store/app_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bits.dart';
@@ -82,6 +83,7 @@ class StatsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
     final store = context.watch<AppStore>();
+    final pro = context.watch<ProStore>();
 
     /* ---------------- 汇总 ---------------- */
     var minutes = 0;
@@ -190,21 +192,23 @@ class StatsPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                CardBox(
-                    child: Material(
-                        color: Colors.transparent,
-                        child: ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: const Icon(Icons.auto_awesome),
-                          title: const Text('年度书影回顾 · Pro'),
-                          subtitle: const Text('按年份回顾阅读与观影，查看 12 个月趋势'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute<void>(
-                                  builder: (_) => const YearReviewPage())),
-                        ))),
-                const SizedBox(height: 16),
+                if (pro.isPro || pro.purchasesEnabled) ...[
+                  CardBox(
+                      child: Material(
+                          color: Colors.transparent,
+                          child: ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: const Icon(Icons.auto_awesome),
+                            title: const Text('年度书影回顾 · Pro'),
+                            subtitle: const Text('按年份回顾阅读与观影，查看 12 个月趋势'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute<void>(
+                                    builder: (_) => const YearReviewPage())),
+                          ))),
+                  const SizedBox(height: 16),
+                ],
                 StatGrid(
                   cells: [
                     StatCell(value: '$readTimes', label: '读完次数'),

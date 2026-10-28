@@ -4,15 +4,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shuying/store/app_store.dart';
 import 'package:shuying/services/backup_codec.dart';
+import 'package:shuying/services/backup_files.dart';
 import 'package:shuying/domain/year_review.dart';
+import 'package:shuying/domain/books.dart' as books;
+import 'package:shuying/domain/movies.dart' as movies;
 import 'package:shuying/models/models.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   late Directory directory;
   final stores = <AppStore>[];
-  Future<AppStore> load() async {
-    final store = AppStore(dataDirectory: directory.path);
+  Future<AppStore> load({bool? seedDemoData = false}) async {
+    final store =
+        AppStore(dataDirectory: directory.path, seedDemoData: seedDemoData);
     stores.add(store);
     await store.load();
     return store;
@@ -28,7 +32,151 @@ void main() {
       store.dispose();
     }
     stores.clear();
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(BackupFiles.channel, null);
     await directory.delete(recursive: true);
+  });
+
+  test('首次安装默认空库且重启后仍为空', () async {
+    final store = await load();
+    expect(store.books, isEmpty);
+    expect(store.movies, isEmpty);
+    expect(await store.flush(), isTrue);
+    final reopened = await load();
+    expect(reopened.books, isEmpty);
+    expect(reopened.movies, isEmpty);
+  });
+
+  test('显式样例模式不覆盖已有记录', () async {
+    final store = await load(seedDemoData: true);
+    expect(store.books, isNotEmpty);
+    expect(store.movies, isNotEmpty);
+    store.clearAll();
+    final book = store.addBook(BookInput(title: '我的记录', author: '作者'));
+    expect(await store.flush(), isTrue);
+    final reopened = await load(seedDemoData: true);
+    expect(reopened.books.single.id, book.id);
+    expect(reopened.movies, isEmpty);
+  });
+
+  for (final channel in {
+    'iOS': true,
+    'Google Play': true,
+    'Android direct（含华为安卓）': false,
+    'HarmonyOS': false
+  }.entries) {
+    test('${channel.key} 首启策略、保留记录与清空后不再生成样例', () async {
+      var policyCalls = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(BackupFiles.channel, (call) async {
+        expect(call.method, 'seedDemoData');
+        policyCalls++;
+        return channel.value;
+      });
+      final first = await load(seedDemoData: null);
+      expect(first.loadFailed, isFalse);
+      expect(first.books.isNotEmpty, channel.value);
+      expect(first.movies.isNotEmpty, channel.value);
+      final originalIds = first.books.map((b) => b.id).toList();
+      expect(await first.flush(), isTrue);
+
+      final reopened = await load(seedDemoData: null);
+      expect(reopened.books.map((b) => b.id), originalIds);
+      reopened.clearAll();
+      expect(await reopened.flush(), isTrue);
+      final cleared = await load(seedDemoData: null);
+      expect(cleared.books, isEmpty);
+      expect(cleared.movies, isEmpty);
+      final book = cleared.addBook(BookInput(title: '我的记录', author: '作者'));
+      expect(await cleared.flush(), isTrue);
+      final existing = await load(seedDemoData: null);
+      expect(existing.books.single.id, book.id);
+      expect(existing.movies, isEmpty);
+      expect(policyCalls, 1); // 只在完全没有本地记录时查询渠道策略。
+    });
+  }
+
+  test('未知原生渠道不生成样例，仍能正常启动', () async {
+    final store = await load(seedDemoData: null);
+    expect(store.loadFailed, isFalse);
+    expect(store.books, isEmpty);
+    expect(store.movies, isEmpty);
+  });
+
+  test('作者导演选填，出版社版本支持保存、重启与跨端备份', () async {
+    final store = await load();
+    final book = store.addBook(BookInput(title: '选填书籍', edition: '出版社 · 第2版'));
+    store.addMovie(MovieInput(title: '选填电影'));
+    expect(store.books.single.author, isEmpty);
+    expect(store.movies.single.director, isEmpty);
+    expect(await store.flush(), isTrue);
+    final reopened = await load();
+    expect(reopened.books.single.edition, '出版社 · 第2版');
+    final backup = decodeBackup(reopened.exportJson());
+    expect(backup.books.single.edition, '出版社 · 第2版');
+    expect(backup.movies.single.director, isEmpty);
+    final other = AppStore(dataDirectory: '${directory.path}/other');
+    stores.add(other);
+    await other.load();
+    other.importJson(reopened.exportJson());
+    expect(other.books.single.edition, '出版社 · 第2版');
+    store.updateBook(book.id, BookInput(title: book.title));
+    expect(store.books.single.edition, isNull);
+    // 老备份没有新字段；作者/导演缺失也可恢复为空文本。
+    final legacy = jsonDecode(reopened.exportJson()) as Map<String, dynamic>;
+    (legacy['books'][0] as Map).remove('edition');
+    (legacy['books'][0] as Map).remove('author');
+    (legacy['movies'][0] as Map).remove('director');
+    final restored = decodeBackup(jsonEncode(legacy));
+    expect(restored.books.single.edition, isNull);
+    expect(restored.books.single.author, isEmpty);
+    expect(restored.movies.single.director, isEmpty);
+  });
+
+  test('任意过去日期补记后阅读轮次重排，活动轮次和观影时间顺序保留', () async {
+    final store = await load();
+    final book = store.addBook(BookInput(title: '补记'));
+    store.startReading(book.id);
+    final activeId = store.bookById(book.id)!.rounds.single.id;
+    store.addPastRound(
+        book.id,
+        PastRoundInput(
+            startedAt: DateTime(2005, 1, 1), finishedAt: DateTime(2005, 1, 9)));
+    final middleId = store.bookById(book.id)!.rounds.first.id;
+    store.addPastRound(
+        book.id,
+        PastRoundInput(
+            startedAt: DateTime(1990, 1, 1), finishedAt: DateTime(1990, 1, 9)));
+    var rounds = store.bookById(book.id)!.rounds;
+    expect(rounds.map((r) => r.index), [1, 2, 3]);
+    expect(
+        rounds.map((r) => r.startedAt.year), [1990, 2005, DateTime.now().year]);
+    expect(books.activeRound(store.bookById(book.id)!)!.id, activeId);
+    expect(books.activeRound(store.bookById(book.id)!)!.index, 3);
+    // 已结束的轮次不再增加阅读次数（只能改已有记录），顺序与编号保持不变。
+    expect(
+        () => store.addLog(
+            book.id, middleId, LogInput(at: DateTime(1980), pages: 10)),
+        throwsStateError);
+    rounds = store.bookById(book.id)!.rounds;
+    expect(rounds.map((r) => r.index), [1, 2, 3]);
+    expect(rounds.map((r) => r.startedAt.year),
+        [1990, 2005, DateTime.now().year]);
+    expect(rounds[1].id, middleId);
+    expect(rounds[1].finishedAt, DateTime(2005, 1, 9));
+    store.removeRound(book.id, middleId);
+    expect(store.bookById(book.id)!.rounds.map((r) => r.index), [1, 2]);
+    final movie = store.addMovie(MovieInput(title: '补记观影'));
+    for (final year in [2005, 1980, 1990]) {
+      store.addWatch(movie.id, at: DateTime(year));
+    }
+    expect(movies.sortedWatches(store.movies.single).map((w) => w.at.year),
+        [2005, 1990, 1980]);
+    expect(await store.flush(), isTrue);
+    final reopened = await load();
+    expect(reopened.books.single.rounds.map((r) => r.index), [1, 2]);
+    expect(reopened.books.single.rounds.first.startedAt.year, 1990);
+    expect(movies.sortedWatches(reopened.movies.single).last.at.year, 1980);
   });
 
   test('即时写入、重启与旧偏好迁移', () async {
@@ -44,6 +192,9 @@ void main() {
     final reopened = await load();
     expect(reopened.books.single.rounds.single.logs.single.pages, 12);
     expect(reopened.movies.single.watches.single.rating, 5);
+    // 清空后的首轮保存不保留已删除记录；后续正常保存仍保留上一份。
+    reopened.updateBook(book.id, BookInput(title: '更新后', author: '作者'));
+    expect(await reopened.flush(), isTrue);
     expect(
         File('${directory.path}/state.v1.json.previous').existsSync(), isTrue);
   });
@@ -65,6 +216,37 @@ void main() {
     expect(await store.flush(), isTrue);
     final reopened = await load();
     expect(reopened.books.single.id, 'old');
+  });
+
+  test('清空数据同时移除旧偏好和历史备份，重启不复活旧记录', () async {
+    final now = DateTime(2026, 10, 2);
+    final old = Book(
+        id: 'legacy',
+        title: '旧数据',
+        author: '作者',
+        createdAt: now,
+        updatedAt: now);
+    SharedPreferences.setMockInitialValues({
+      'shuying.state.v1': jsonEncode({
+        'books': [old.toJson()],
+        'movies': []
+      })
+    });
+    final store = await load();
+    await store.flush();
+    expect(store.books, isNotEmpty);
+    store.clearAll();
+    expect(await store.flush(), isTrue);
+    expect(
+        (await SharedPreferences.getInstance()).containsKey('shuying.state.v1'),
+        isFalse);
+    final disk = File('${directory.path}/state.v1.json').readAsStringSync();
+    expect(disk.contains('legacy'), isFalse);
+    final previous = File('${directory.path}/state.v1.json.previous');
+    if (previous.existsSync()) {
+      expect(previous.readAsStringSync().contains('legacy'), isFalse);
+    }
+    expect((await load()).books, isEmpty);
   });
 
   test('跨端双向合并嵌套记录且重复导入不重复', () async {
@@ -98,6 +280,7 @@ void main() {
 
   test('无效备份原子拒绝，空备份不清空本机', () async {
     final store = await load();
+    store.addBook(BookInput(title: '保留的记录', author: '作者'));
     final before = store.books.length;
     final map = jsonDecode(store.exportJson()) as Map<String, dynamic>;
     map['books'].add({'id': 'bad', 'title': '坏记录'});

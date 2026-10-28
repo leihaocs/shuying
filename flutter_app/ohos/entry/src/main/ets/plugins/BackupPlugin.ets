@@ -28,6 +28,7 @@ export default class BackupPlugin implements FlutterPlugin, MethodCallHandler {
     this.handle(call, result);
   }
   private async handle(call: MethodCall, result: MethodResult): Promise<void> {
+    if (call.method === 'seedDemoData') { result.success(false); return; }
     if (call.method === 'status') { result.success(false); return; }
     if (call.method === 'product') { result.success({ 'purchasesEnabled': false }); return; }
     if (call.method === 'buy' || call.method === 'restore') {

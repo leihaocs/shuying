@@ -5,7 +5,7 @@
 # 前置条件：Xcode 已登录 Apple ID（Xcode → Settings → Accounts → + → Apple ID），
 #           并在 Runner target 的 Signing & Capabilities 中选中 Team（勾选自动签名）。
 #
-#   ./tool/ios_ipa.sh             自动探测证书并打包
+#   ./tool/ios_ipa.sh             自动探测证书并导出本地 IPA
 #   ./tool/ios_ipa.sh development 强制 development 导出（免费账号可用，供本地安装）
 #   ./tool/ios_ipa.sh app-store   直接上传 App Store Connect（需付费开发者账号）
 #   ./tool/ios_ipa.sh ad-hoc      强制 Ad Hoc 分发（需付费账号 + 在开发者网站手动添加设备 UDID）
@@ -15,6 +15,7 @@ set -euo pipefail
 
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$APP_DIR"
+source "$APP_DIR/tool/build_version.sh"
 
 export PATH="$HOME/development/flutter/bin:$PATH"
 export PUB_HOSTED_URL="https://pub.flutter-io.cn"
@@ -49,7 +50,7 @@ has_dev()   { echo "$IDENTITIES" | grep -qiE 'Apple Development|iPhone Developer
 METHOD="$REQUESTED"
 LOCAL_IPA=0
 if [ "$METHOD" = "auto" ]; then
-  if has_dist; then METHOD="app-store"; else METHOD="development"; fi
+  if has_dist; then METHOD="app-store"; LOCAL_IPA=1; else METHOD="development"; fi
 fi
 
 # TestFlight：签名方式等同 App Store（Apple Distribution），但产出本地 IPA 交给 Transporter 上传
@@ -207,11 +208,7 @@ flutter pub get
 # flutter build 会更新 ios/Podfile.lock 但不刷新 Pods/Manifest.lock，
 # 不同步会让 xcodebuild 报 "The sandbox is not in sync with the Podfile.lock"。
 (cd ios && pod install)
-# 版本号注入（与 tool/release.sh 同逻辑，唯一来源是 pubspec.yaml）
-APP_VER_RAW="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -1 | tr -d '\r')"
-APP_VER_NAME="${APP_VER_RAW%%+*}"
-APP_VER_BUILD="${APP_VER_RAW#*+}"
-if [ "$APP_VER_BUILD" = "$APP_VER_RAW" ]; then APP_VER_BUILD="1"; fi
+# 与三端脚本共用已校验的版本，禁止自动累加。
 echo "==> 版本号注入：$APP_VER_NAME ($APP_VER_BUILD)"
 flutter build ipa --release --dart-define="APP_VERSION=$APP_VER_NAME ($APP_VER_BUILD)" --export-options-plist="$EXPORT_PLIST"
 

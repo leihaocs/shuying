@@ -55,7 +55,7 @@ class BookTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      book.author,
+                      book.author.isEmpty ? (book.edition ?? '') : book.author,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: 12.5, color: c.text2),
@@ -66,17 +66,16 @@ class BookTile extends StatelessWidget {
                     ],
                     const Spacer(),
                     const SizedBox(height: 8),
-                    Row(
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 4,
                       children: [
                         BookStatusPill(book),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            _meta(summary),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 12, color: c.text3),
-                          ),
+                        Text(
+                          _meta(summary),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 12, color: c.text3),
                         ),
                         Text(
                           relativeDay(bl.bookLastTouch(book)),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../services/pro_store.dart';
 import '../store/app_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bits.dart';
@@ -27,7 +28,7 @@ Future<String>? _versionFuture;
 /// 版本号的唯一来源仍是 `pubspec.yaml` 的 `version`，脚本构建时读取并注入，
 /// 所以**改版本只需改 pubspec.yaml 一行**。
 const String _kAppVersion =
-    String.fromEnvironment('APP_VERSION', defaultValue: '1.0.0 (1)');
+    String.fromEnvironment('APP_VERSION', defaultValue: '开发版本（未注入）');
 
 Future<String> _appVersion() {
   _versionFuture ??= Future<String>.value(_kAppVersion);
@@ -48,25 +49,31 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
     final store = context.watch<AppStore>();
+    final pro = context.watch<ProStore>();
 
     return Scaffold(
       backgroundColor: c.bg,
-      body: Column(
+      body: SafeArea(
+          child: Column(
         children: [
           const NavBar(title: '设置'),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: [
-                CardBox(
-                    child: _TapRow(
-                  icon: Icons.auto_awesome,
-                  title: 'Pro · 年度书影回顾',
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(context,
-                      MaterialPageRoute<void>(builder: (_) => const ProPage())),
-                )),
-                const SizedBox(height: 18),
+                if (pro.isPro || pro.purchasesEnabled) ...[
+                  CardBox(
+                      child: _TapRow(
+                    icon: Icons.auto_awesome,
+                    title: 'Pro · 年度书影回顾',
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                            builder: (_) => const ProPage())),
+                  )),
+                  const SizedBox(height: 18),
+                ],
                 const _SectionHeader('外观'),
                 CardBox(
                   child: _TapRow(
@@ -191,13 +198,21 @@ class SettingsPage extends StatelessWidget {
                         onPressed: () async {
                           const url = 'https://beian.miit.gov.cn/';
                           try {
-                            const channel = MethodChannel('com.bookmovie.revisit/backup');
-                            if (await channel.invokeMethod<bool>('openFiling') == true) return;
+                            const channel =
+                                MethodChannel('com.bookmovie.revisit/backup');
+                            if (await channel
+                                    .invokeMethod<bool>('openFiling') ==
+                                true) {
+                              return;
+                            }
                           } catch (_) {
                             // 无浏览器或旧原生通道时，保留手动查询方式。
                           }
-                          await Clipboard.setData(const ClipboardData(text: url));
-                          if (context.mounted) showToast(context, '无法打开浏览器，已复制工信部备案查询网址');
+                          await Clipboard.setData(
+                              const ClipboardData(text: url));
+                          if (context.mounted) {
+                            showToast(context, '无法打开浏览器，已复制工信部备案查询网址');
+                          }
                         },
                         child: const Text('工信部备案查询'),
                       ),
@@ -215,7 +230,7 @@ class SettingsPage extends StatelessWidget {
             ),
           ),
         ],
-      ),
+      )),
     );
   }
 
@@ -240,9 +255,11 @@ class SettingsPage extends StatelessWidget {
       confirmText: '永久删除',
     );
     if (ok && context.mounted) {
-      context.read<AppStore>().clearAll();
+      final store = context.read<AppStore>();
+      store.clearAll();
+      final saved = await store.flush();
       if (context.mounted) {
-        showToast(context, '已清空所有数据');
+        showToast(context, saved ? '已清空所有数据' : '清空尚未保存成功，请重试保存');
       }
     }
   }
@@ -343,19 +360,22 @@ class _InfoRow extends StatelessWidget {
     final c = AppColors.of(context);
     return Row(
       children: [
-        Text(
+        Expanded(
+            child: Text(
           label,
           style: TextStyle(fontSize: 13, color: c.text3),
-        ),
-        const Spacer(),
-        Text(
+        )),
+        const SizedBox(width: 12),
+        Flexible(
+            child: Text(
           value,
+          textAlign: TextAlign.right,
           style: TextStyle(
             fontSize: 13,
             color: c.text,
             fontWeight: FontWeight.w500,
           ),
-        ),
+        )),
       ],
     );
   }
