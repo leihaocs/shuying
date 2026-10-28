@@ -46,67 +46,72 @@ class _YearReviewPageState extends State<YearReviewPage> {
         '阅读 $readingDays 天 · 观影 $watches 次 · 平均评分 $rating';
     return Scaffold(
       appBar: AppBar(title: Text(widget.preview ? '示例年度回顾' : '年度书影回顾')),
-      body: ListView(padding: const EdgeInsets.all(20), children: [
-        if (widget.preview) const Text('以下为示例数据，不是你的记录。'),
-        DropdownButton<int>(
-            value: year,
-            items: [
-              for (final y in years)
-                DropdownMenuItem(value: y, child: Text('$y 年'))
-            ],
-            onChanged: widget.preview
-                ? null
-                : (v) {
-                    if (v != null) setState(() => year = v);
-                  }),
-        const SizedBox(height: 12),
-        StatGrid(cells: [
-          StatCell(value: '$readTimes', label: '读完次数'),
-          StatCell(value: '$pages', label: '阅读页数'),
-          StatCell(
-              value: '${(minutes / 60).toStringAsFixed(1)}h', label: '阅读时长')
-        ]),
-        const SizedBox(height: 12),
-        StatGrid(cells: [
-          StatCell(value: '$readingDays', label: '阅读天数'),
-          StatCell(value: '$watches', label: '观影次数'),
-          StatCell(value: rating, label: '平均评分')
-        ]),
-        const SizedBox(height: 24),
-        const Text('12 个月阅读与观影'),
-        const SizedBox(height: 12),
-        CardBox(
-            child: Column(children: [
-          for (var month = 0; month < 12; month++)
-            Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
+      body: SafeArea(
+          top: false,
+          child: ListView(padding: const EdgeInsets.all(20), children: [
+            if (widget.preview) const Text('以下为示例数据，不是你的记录。'),
+            DropdownButton<int>(
+                value: year,
+                items: [
+                  for (final y in years)
+                    DropdownMenuItem(value: y, child: Text('$y 年'))
+                ],
+                onChanged: widget.preview
+                    ? null
+                    : (v) {
+                        if (v != null) setState(() => year = v);
+                      }),
+            const SizedBox(height: 12),
+            StatGrid(cells: [
+              StatCell(value: '$readTimes', label: '读完次数'),
+              StatCell(value: '$pages', label: '阅读页数'),
+              StatCell(
+                  value: '${(minutes / 60).toStringAsFixed(1)}h', label: '阅读时长')
+            ]),
+            const SizedBox(height: 12),
+            StatGrid(cells: [
+              StatCell(value: '$readingDays', label: '阅读天数'),
+              StatCell(value: '$watches', label: '观影次数'),
+              StatCell(value: rating, label: '平均评分')
+            ]),
+            const SizedBox(height: 24),
+            const Text('12 个月阅读与观影'),
+            const SizedBox(height: 12),
+            CardBox(
                 child: Column(children: [
-                  Row(children: [
-                    Text('${month + 1} 月'),
-                    const Spacer(),
-                    Text(
-                        '${widget.preview ? (month + 1) * 30 : review.monthlyMinutes[month]} 分钟 · '
-                        '${widget.preview ? 2 : review.monthlyWatches[month]} 次观影')
-                  ]),
-                  const SizedBox(height: 4),
-                  LinearProgressIndicator(
-                      value: widget.preview
-                          ? (month + 1) / 12
-                          : _ratio(review.monthlyMinutes, month)),
-                ])),
-        ])),
-        const SizedBox(height: 20),
-        ElevatedButton(
-            onPressed: widget.preview
-                ? null
-                : () async {
-                    await Clipboard.setData(ClipboardData(text: text));
-                    if (!context.mounted) return;
-                    ScaffoldMessenger.of(context)
-                        .showSnackBar(const SnackBar(content: Text('年度回顾已复制')));
-                  },
-            child: const Text('复制年度回顾')),
-      ]),
+              for (var month = 0; month < 12; month++)
+                Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Column(children: [
+                      Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          spacing: 12,
+                          runSpacing: 4,
+                          children: [
+                            Text('${month + 1} 月'),
+                            Text(
+                                '${widget.preview ? (month + 1) * 30 : review.monthlyMinutes[month]} 分钟 · '
+                                '${widget.preview ? 2 : review.monthlyWatches[month]} 次观影')
+                          ]),
+                      const SizedBox(height: 4),
+                      LinearProgressIndicator(
+                          value: widget.preview
+                              ? (month + 1) / 12
+                              : _ratio(review.monthlyMinutes, month)),
+                    ])),
+            ])),
+            const SizedBox(height: 20),
+            ElevatedButton(
+                onPressed: widget.preview
+                    ? null
+                    : () async {
+                        await Clipboard.setData(ClipboardData(text: text));
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('年度回顾已复制')));
+                      },
+                child: const Text('复制年度回顾')),
+          ])),
     );
   }
 

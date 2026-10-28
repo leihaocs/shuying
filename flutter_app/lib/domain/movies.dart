@@ -3,15 +3,17 @@ import '../models/models.dart';
 MovieStatus movieStatus(Movie movie) =>
     movie.watches.isEmpty ? MovieStatus.want : MovieStatus.watched;
 
-String movieStatusLabel(Movie movie) => movie.watches.isEmpty
-    ? '想看'
-    : '已看${movie.watches.length}次';
+String movieStatusLabel(Movie movie) =>
+    movie.watches.isEmpty ? '想看' : '已看${movie.watches.length}次';
 
 /// 观影记录按时间倒序
 List<WatchRecord> sortedWatches(Movie movie) {
-  final list = [...movie.watches];
-  list.sort((a, b) => b.at.compareTo(a.at));
-  return list;
+  final entries = movie.watches.asMap().entries.toList()
+    ..sort((a, b) {
+      final date = b.value.at.compareTo(a.value.at);
+      return date != 0 ? date : b.key.compareTo(a.key);
+    });
+  return entries.map((entry) => entry.value).toList();
 }
 
 WatchRecord? lastWatch(Movie movie) {

@@ -65,9 +65,11 @@ xcrun altool --upload-app -f <IPA路径> -t ios --apiKey <KEY> --apiIssuer <ISSU
 
 ## 三、版本号与构建号
 
+当前正式基线为用户指定的 5，候选号固定 6。只有用户明确指定新的正式构建号，才调整为新正式号 +1；重复编译、审核通过/失败和上传冲突均不自动升号。构建入口会执行 `tool/build_version.sh` 校验。
+
 - **唯一来源**：`flutter_app/pubspec.yaml` 的 `version: 1.0.0+N`
 - 构建号 = `N`，注入到 Xcode 的 `CURRENT_PROJECT_VERSION`
-- Apple 要求 `N` **严格大于**已上传过的构建号，且只能递增不能回退
+- 若商店提示构建号重复或不符合其接收要求，报告用户处理；不得因此自行改变正式基线或候选号
 
 ### ★ 坑 1：改了 pubspec，构建号却没变
 
@@ -208,7 +210,7 @@ iOS 26.3 模拟器**不渲染 emoji**，底部 tab 和封面会显示成 `?`。�
 | 5 | 送审列表里没有内购 | 从**内购页**发起提交，见坑 4 |
 | 6 | Xcode 上传报 `Failed to Use Accounts` | 改用 **Transporter** 登录同一账号上传 |
 | 7 | `sandbox is not in sync with Podfile.lock` | 打包前执行 `(cd ios && pod install)` |
-| 8 | 构建号回退被拒 | Apple 要求严格递增，回退必须换思路（不能复用旧号） |
+| 8 | 构建号回退被拒 | 核对实际上传记录并报告用户，不能自行升号 |
 
 ---
 

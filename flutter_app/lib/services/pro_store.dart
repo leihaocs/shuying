@@ -1,11 +1,13 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
 
 /// 权益只来自商店验证，不写入 JSON 备份，也不通过本地开关解锁。
 class ProStore extends ChangeNotifier with WidgetsBindingObserver {
   static const channel = MethodChannel('com.bookmovie.revisit/purchases');
   bool isPro = false;
-  bool purchasesEnabled = true;
+  // iOS 保留恢复购买入口，其余渠道经原生能力确认后再显示。
+  bool purchasesEnabled = defaultTargetPlatform == TargetPlatform.iOS;
   bool busy = false;
   String? price;
   String? message;
@@ -31,8 +33,13 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
     busy = true;
     _notify();
     try {
-      isPro = await channel.invokeMethod<bool>('status') ?? false;
-      final product = await channel.invokeMapMethod<String, dynamic>('product');
+      isPro = await channel
+              .invokeMethod<bool>('status')
+              .timeout(const Duration(seconds: 15)) ??
+          false;
+      final product = await channel
+          .invokeMapMethod<String, dynamic>('product')
+          .timeout(const Duration(seconds: 15));
       purchasesEnabled = product?['purchasesEnabled'] != false;
       price = purchasesEnabled ? (product?['price'] as String?) : null;
       message = !purchasesEnabled

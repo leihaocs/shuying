@@ -1,6 +1,20 @@
 import '../models/models.dart';
 import 'fmt.dart';
 
+/// 补记、删轮次及导入后统一按开始时间重排，从 1 编号。
+List<ReadingRound> chronologicalRounds(Iterable<ReadingRound> rounds) {
+  final ordered = rounds.toList()
+    ..sort((a, b) {
+      final date = a.startedAt.compareTo(b.startedAt);
+      if (date != 0) return date;
+      final index = a.index.compareTo(b.index);
+      return index != 0 ? index : a.id.compareTo(b.id);
+    });
+  return [
+    for (var i = 0; i < ordered.length; i++) ordered[i].copyWith(index: i + 1)
+  ];
+}
+
 /// 当前正在进行、尚未读完的一轮阅读
 ReadingRound? activeRound(Book book) {
   for (final r in book.rounds) {
@@ -16,10 +30,16 @@ List<ReadingRound> finishedRounds(Book book) {
   return list;
 }
 
-/// 全部轮次，按第几次阅读正序
+/// 全部轮次倒序显示（最新一轮在最上面），编号仍从最早的第 1 轮开始。
+/// 以开始时间为准，改过时间后顺序会跟着变。
 List<ReadingRound> allRounds(Book book) {
   final list = [...book.rounds];
-  list.sort((a, b) => a.index.compareTo(b.index));
+  list.sort((a, b) {
+    final date = b.startedAt.compareTo(a.startedAt);
+    if (date != 0) return date;
+    final index = b.index.compareTo(a.index);
+    return index != 0 ? index : b.id.compareTo(a.id);
+  });
   return list;
 }
 
@@ -57,16 +77,24 @@ int roundMinutes(ReadingRound round) =>
 
 int roundLogCount(ReadingRound round) => round.logs.length;
 
+/// 兼容旧轮次中保存在明细里的感想；显式保存空文本表示用户已清空。
+String roundReflection(ReadingRound round) => round.note ??
+    sortedLogs(round).map((log) => log.note?.trim() ?? '')
+        .where((note) => note.isNotEmpty).join('\n\n');
+
 /// 阅读记录按时间倒序
 List<ReadingLog> sortedLogs(ReadingRound round) {
-  final list = [...round.logs];
-  list.sort((a, b) => b.at.compareTo(a.at));
-  return list;
+  final entries = round.logs.asMap().entries.toList()
+    ..sort((a, b) {
+      final date = b.value.at.compareTo(a.value.at);
+      return date != 0 ? date : b.key.compareTo(a.key);
+    });
+  return entries.map((entry) => entry.value).toList();
 }
 
 /// 当前进度：优先取最近一次显式填写的进度，否则按页数估算。
 int roundProgress(Book book, ReadingRound? round) {
-  if (round == null) return 0;
+  if (round == null || !round.isActive) return 0;
   for (final l in sortedLogs(round)) {
     if (l.progress != null) return clampInt(l.progress!, 0, 100);
   }
@@ -126,13 +154,13 @@ BookSummary bookSummary(Book book) {
 DateTime bookLastTouch(Book book) {
   DateTime? last;
   for (final r in book.rounds) {
-    if (r.finishedAt != null &&
-        (last == null || r.finishedAt!.isAfter(last))) {
-      last = r.finishedAt;
-    }
+    var touch = r.startedAt;
+    final finished = r.finishedAt;
+    if (finished != null && finished.isAfter(touch)) touch = finished;
     for (final l in r.logs) {
-      if (last == null || l.at.isAfter(last)) last = l.at;
+      if (l.at.isAfter(touch)) touch = l.at;
     }
+    if (last == null || touch.isAfter(last)) last = touch;
   }
   return last ?? book.createdAt;
 }

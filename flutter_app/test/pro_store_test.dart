@@ -36,6 +36,7 @@ void main() {
     outcome = 'purchased'; await pro.buy(); expect(pro.isPro, isTrue);
   });
   test('恢复与退款状态从商店读取，不靠本地标记', () async {
+    await pro.refresh();
     entitled = true; await pro.restore(); expect(pro.isPro, isTrue);
     entitled = false; await pro.refresh(); expect(pro.isPro, isFalse);
   });

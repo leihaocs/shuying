@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'pages/home_shell.dart';
@@ -10,19 +13,20 @@ import 'theme/app_theme.dart';
 /// 上架截图模式：`flutter run --dart-define=SHUYING_SCREENSHOT=true --dart-define=SHUYING_TAB=n`
 /// 会在加载完示例数据后自动同意隐私政策，并直接停在第 n 个 Tab。
 /// 默认关闭，对正常启动没有任何影响。
-const bool kScreenshotMode =
+const bool kScreenshotMode = !kReleaseMode &&
     bool.fromEnvironment('SHUYING_SCREENSHOT', defaultValue: false);
-const int kScreenshotTab = int.fromEnvironment('SHUYING_TAB', defaultValue: 0);
+const int kScreenshotTab =
+    kScreenshotMode ? int.fromEnvironment('SHUYING_TAB', defaultValue: 0) : 0;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider<ProStore>(create: (_) => ProStore()),
+        ChangeNotifierProvider<ProStore>(create: (_) => ProStore()..refresh()),
         ChangeNotifierProvider<AppStore>(
           create: (_) {
-            final store = AppStore();
+            final store = AppStore(seedDemoData: kScreenshotMode ? true : null);
             final Future<void> loading = store.load();
             if (kScreenshotMode) {
               loading.then((_) => store.acceptPrivacy());
@@ -49,6 +53,21 @@ class ShuYingApp extends StatelessWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      supportedLocales: const [Locale('zh', 'CN')],
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: (Theme.of(context).brightness == Brightness.dark
+                ? SystemUiOverlayStyle.light
+                : SystemUiOverlayStyle.dark)
+            .copyWith(
+                statusBarColor: Colors.transparent,
+                systemNavigationBarColor: AppColors.of(context).bg,
+                systemNavigationBarIconBrightness:
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Brightness.light
+                        : Brightness.dark),
+        child: child ?? const SizedBox.shrink(),
+      ),
       home: const _AppEntry(),
     );
   }

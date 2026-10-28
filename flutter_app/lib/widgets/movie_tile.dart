@@ -57,19 +57,21 @@ class MovieTile extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      movie.year == null
-                          ? movie.director
-                          : '${movie.director} · ${movie.year}',
+                      [
+                        if (movie.director.isNotEmpty) movie.director,
+                        if (movie.year != null) movie.year!
+                      ].join(' · '),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: 12.5, color: c.text2),
                     ),
                     const Spacer(),
                     const SizedBox(height: 8),
-                    Row(
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
                       children: [
                         MovieStatusPill(movie),
-                        const SizedBox(width: 8),
                         if (last?.rating != null)
                           StarRow(rating: last!.rating, size: 13),
                         Text(

@@ -61,10 +61,41 @@ void main() {
   });
 
   group('进度计算', () {
+    test('相同时间的记录以最后添加为最近，进度不会回退到旧记录', () {
+      final at = DateTime(2026, 10, 28, 8, 30);
+      final b = _book(rounds: [
+        _round(logs: [
+          ReadingLog(id: 'older', at: at, progress: 20),
+          ReadingLog(id: 'newer', at: at, progress: 40),
+        ])
+      ]);
+      expect(sortedLogs(b.rounds.single).first.id, 'newer');
+      expect(roundProgress(b, b.rounds.single), 40);
+      final m = Movie(
+          id: 'm',
+          title: '电影',
+          director: '',
+          createdAt: at,
+          updatedAt: at,
+          watches: [
+            WatchRecord(id: 'older', at: at, rating: 2),
+            WatchRecord(id: 'newer', at: at, rating: 5),
+          ]);
+      expect(lastWatch(m)!.id, 'newer');
+    });
+
+    test('开始新一轮阅读也计入最近阅读时间', () {
+      final at = DateTime(2026, 10, 28);
+      final b =
+          _book(rounds: [ReadingRound(id: 'new', index: 1, startedAt: at)]);
+      expect(bookLastTouch(b), at);
+    });
+
     test('优先取最近一次显式填写的进度', () {
       final b = _book(totalPages: 100, rounds: [
         _round(logs: [
-          ReadingLog(id: 'l1', at: DateTime(2026, 1, 3), pages: 40, progress: 40),
+          ReadingLog(
+              id: 'l1', at: DateTime(2026, 1, 3), pages: 40, progress: 40),
           ReadingLog(id: 'l2', at: DateTime(2026, 1, 4), minutes: 30),
         ]),
       ]);
@@ -148,6 +179,12 @@ void main() {
   });
 
   group('格式化', () {
+    test('日期默认补上保存时刻，明确选择的时间不被覆盖', () {
+      final day = DateTime(1999, 2, 3, 12);
+      final now = DateTime(2026, 10, 28, 21, 45, 17);
+      expect(recordTimestamp(day, now: now), DateTime(1999, 2, 3, 21, 45, 17));
+      expect(recordTimestamp(day, explicitTime: true, now: now), day);
+    });
     test('时长', () {
       expect(formatDuration(0), '—');
       expect(formatDuration(45), '45分钟');

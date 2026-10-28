@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../domain/books.dart' show roundMinutes, roundPages, roundProgress;
+import '../domain/books.dart'
+    show roundMinutes, roundPages, roundProgress, roundReflection;
 import '../domain/fmt.dart';
 import '../models/models.dart';
 import '../store/app_store.dart';
@@ -47,7 +49,8 @@ class _SheetFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -170,7 +173,7 @@ class Field extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
+            child: Wrap(
               children: [
                 Text(
                   label,
@@ -181,8 +184,7 @@ class Field extends StatelessWidget {
                   ),
                 ),
                 if (required)
-                  Text(' *',
-                      style: TextStyle(color: c.accent, fontSize: 12.5)),
+                  Text(' *', style: TextStyle(color: c.accent, fontSize: 12.5)),
                 if (optional)
                   Text(
                     '  选填',
@@ -271,7 +273,11 @@ class PickerRow extends StatelessWidget {
           children: [
             Icon(icon, size: 16, color: c.text3),
             const SizedBox(width: 8),
-            Text(text, style: TextStyle(fontSize: 15, color: c.text)),
+            Expanded(
+                child: Text(text,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 15, color: c.text))),
           ],
         ),
       ),
@@ -352,32 +358,129 @@ class ColorPicker extends StatelessWidget {
 /* 日期时间选择                                                        */
 /* ------------------------------------------------------------------ */
 
-Future<DateTime?> pickDateTime(BuildContext context, DateTime initial) async {
-  final date = await showDatePicker(
+/// 日期与可选时间分开选择，三端统一使用滚轮选择时分。
+class RecordDateTimeField extends StatefulWidget {
+  const RecordDateTimeField(
+      {super.key,
+      required this.label,
+      required this.value,
+      required this.onChanged,
+      this.onTimeSelected,
+      this.preserveTime = false});
+  final String label;
+  final DateTime value;
+  final ValueChanged<DateTime> onChanged;
+  final VoidCallback? onTimeSelected;
+  final bool preserveTime;
+
+  @override
+  State<RecordDateTimeField> createState() => _RecordDateTimeFieldState();
+}
+
+class _RecordDateTimeFieldState extends State<RecordDateTimeField> {
+  late bool _timeSelected;
+
+  @override
+  void initState() {
+    super.initState();
+    _timeSelected = widget.preserveTime;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Field(
+          label: widget.label,
+          child: PickerRow(
+            key: const Key('record-date'),
+            text: formatDate(widget.value),
+            onTap: () async {
+              final date = await pickDayOnly(context, widget.value);
+              if (date == null || !mounted) return;
+              final value = _timeSelected ? widget.value : DateTime.now();
+              widget.onChanged(DateTime(
+                  date.year, date.month, date.day, value.hour, value.minute));
+            },
+          )),
+      Field(
+          label: '时间',
+          hint: _timeSelected ? '点击可修改时间' : '默认使用保存记录时的当前时间，可点此修改',
+          child: PickerRow(
+            key: const Key('record-time'),
+            icon: Icons.schedule_rounded,
+            text: formatDateTime(widget.value).substring(11) +
+                (!_timeSelected && isSameDay(widget.value, DateTime.now())
+                    ? '（当前时间）' : ''),
+            onTap: () async {
+              final time = await pickWheelTime(context, widget.value);
+              if (time == null || !mounted) return;
+              setState(() => _timeSelected = true);
+              widget.onTimeSelected?.call();
+              widget.onChanged(time);
+            },
+          )),
+    ]);
+  }
+}
+
+Future<DateTime?> pickWheelTime(BuildContext context, DateTime initial) {
+  FocusScope.of(context).unfocus();
+  var selected = initial;
+  final c = AppColors.of(context);
+  return showModalBottomSheet<DateTime>(
     context: context,
-    initialDate: initial,
-    firstDate: DateTime(1950),
-    lastDate: DateTime.now().add(const Duration(days: 1)),
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (ctx) => SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints:
+              BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.8),
+          child: SizedBox(
+              height: 300,
+              child: Column(children: [
+                Row(children: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('取消')),
+                  const Expanded(
+                      child: Text('选择时间', textAlign: TextAlign.center)),
+                  TextButton(
+                      onPressed: () => Navigator.pop(ctx, selected),
+                      child: const Text('确定')),
+                ]),
+                Expanded(
+                    child: CupertinoTheme(
+                  data: CupertinoThemeData(
+                      brightness: Theme.of(ctx).brightness,
+                      primaryColor: c.accent),
+                  child: CupertinoDatePicker(
+                    mode: CupertinoDatePickerMode.time,
+                    use24hFormat: true,
+                    initialDateTime: initial,
+                    onDateTimeChanged: (time) => selected = DateTime(
+                        initial.year,
+                        initial.month,
+                        initial.day,
+                        time.hour,
+                        time.minute),
+                  ),
+                )),
+              ])),
+        )),
   );
-  if (date == null) return null;
-  if (!context.mounted) return null;
-  final time = await showTimePicker(
-    context: context,
-    initialTime: TimeOfDay.fromDateTime(initial),
-  );
-  if (time == null) return null;
-  return DateTime(date.year, date.month, date.day, time.hour, time.minute);
 }
 
 Future<DateTime?> pickDayOnly(BuildContext context, DateTime initial) async {
+  FocusScope.of(context).unfocus();
   final date = await showDatePicker(
     context: context,
     initialDate: initial,
-    firstDate: DateTime(1950),
-    lastDate: DateTime.now().add(const Duration(days: 1)),
+    firstDate: DateTime(1),
+    lastDate: DateTime.now(),
   );
   if (date == null) return null;
-  return DateTime(date.year, date.month, date.day, 12);
+  return recordTimestamp(date);
 }
 
 /* ------------------------------------------------------------------ */
@@ -388,7 +491,7 @@ Future<bool?> showBookSheet(BuildContext context, {Book? book}) {
   return _openSheet<bool>(
     context,
     title: book == null ? '添加书籍' : '编辑书籍',
-    subtitle: '书名与作者必填，其余可以以后再补',
+    subtitle: '只需填写书名，其余可以以后再补',
     child: _BookForm(existing: book),
   );
 }
@@ -405,12 +508,12 @@ class _BookForm extends StatefulWidget {
 class _BookFormState extends State<_BookForm> {
   late final TextEditingController _title;
   late final TextEditingController _author;
+  late final TextEditingController _edition;
   late final TextEditingController _pages;
   late final TextEditingController _note;
   late String _cover;
   late int _accent;
   String? _titleErr;
-  String? _authorErr;
 
   @override
   void initState() {
@@ -418,6 +521,7 @@ class _BookFormState extends State<_BookForm> {
     final b = widget.existing;
     _title = TextEditingController(text: b?.title ?? '');
     _author = TextEditingController(text: b?.author ?? '');
+    _edition = TextEditingController(text: b?.edition ?? '');
     _pages = TextEditingController(text: b?.totalPages?.toString() ?? '');
     _note = TextEditingController(text: b?.note ?? '');
     _cover = b?.cover ?? '📖';
@@ -428,6 +532,7 @@ class _BookFormState extends State<_BookForm> {
   void dispose() {
     _title.dispose();
     _author.dispose();
+    _edition.dispose();
     _pages.dispose();
     _note.dispose();
     super.dispose();
@@ -438,14 +543,14 @@ class _BookFormState extends State<_BookForm> {
     final author = _author.text.trim();
     setState(() {
       _titleErr = title.isEmpty ? '书名不能为空' : null;
-      _authorErr = author.isEmpty ? '作者不能为空' : null;
     });
-    if (title.isEmpty || author.isEmpty) return;
+    if (title.isEmpty) return;
 
     final store = context.read<AppStore>();
     final input = BookInput(
       title: title,
       author: author,
+      edition: _edition.text,
       totalPages: parseIntOrNull(_pages.text),
       cover: _cover,
       accent: _accent,
@@ -479,12 +584,21 @@ class _BookFormState extends State<_BookForm> {
               ),
               Field(
                 label: '作者',
-                required: true,
-                error: _authorErr,
+                optional: true,
                 child: TextField(
                   controller: _author,
                   textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(hintText: '例如：余华'),
+                ),
+              ),
+              Field(
+                label: '出版社 / 版本',
+                optional: true,
+                child: TextField(
+                  controller: _edition,
+                  textInputAction: TextInputAction.next,
+                  decoration:
+                      const InputDecoration(hintText: '例如：人民文学出版社 · 第3版'),
                 ),
               ),
               Field(
@@ -548,20 +662,29 @@ Future<bool?> showLogSheet(
   BuildContext context, {
   required Book book,
   required ReadingRound round,
+  ReadingLog? log,
 }) {
+  // 已读完的轮次：带记录进来就是改这条记录（日期 / 页数 / 时长），
+  // 不带记录则打开轮次表单改起止时间与感想，不再新增阅读次数。
+  if (!round.isActive && log == null) {
+    return showPastRoundSheet(context, book: book, round: round);
+  }
   return _openSheet<bool>(
     context,
-    title: '记录本次阅读',
-    subtitle: '读了 ${roundPages(round)} 页 · ${formatDuration(roundMinutes(round))}',
-    child: _LogForm(book: book, round: round),
+    title: log == null ? '记录本次阅读' : '修改阅读记录',
+    subtitle: round.isActive
+        ? '读了 ${roundPages(round)} 页 · ${formatDuration(roundMinutes(round))}'
+        : '已读完的轮次：可改日期、页数与时长，进度不再调整',
+    child: _LogForm(book: book, round: round, existing: log),
   );
 }
 
 class _LogForm extends StatefulWidget {
-  const _LogForm({required this.book, required this.round});
+  const _LogForm({required this.book, required this.round, this.existing});
 
   final Book book;
   final ReadingRound round;
+  final ReadingLog? existing;
 
   @override
   State<_LogForm> createState() => _LogFormState();
@@ -569,6 +692,7 @@ class _LogForm extends StatefulWidget {
 
 class _LogFormState extends State<_LogForm> {
   late DateTime _at;
+  bool _explicitTime = false;
   late final TextEditingController _pages;
   late final TextEditingController _minutes;
   late final TextEditingController _note;
@@ -579,13 +703,15 @@ class _LogFormState extends State<_LogForm> {
   @override
   void initState() {
     super.initState();
-    _at = DateTime.now();
-    _pages = TextEditingController();
-    _minutes = TextEditingController();
-    _note = TextEditingController();
-    _useProgress = true;
+    final log = widget.existing;
+    _at = log?.at ?? DateTime.now();
+    _explicitTime = log != null;
+    _pages = TextEditingController(text: log?.pages?.toString() ?? '');
+    _minutes = TextEditingController(text: log?.minutes?.toString() ?? '');
+    _note = TextEditingController(text: log?.note ?? '');
+    _useProgress = log != null ? log.progress != null : (widget.book.totalPages ?? 0) <= 0;
     // 默认停在当前进度上，方便小幅往前调
-    _progress = roundProgress(widget.book, widget.round).toDouble();
+    _progress = (log?.progress ?? roundProgress(widget.book, widget.round)).toDouble();
   }
 
   @override
@@ -600,23 +726,44 @@ class _LogFormState extends State<_LogForm> {
     final pages = parseIntOrNull(_pages.text);
     final minutes = parseIntOrNull(_minutes.text);
     final note = _note.text.trim();
+    final active = widget.round.isActive;
 
-    if (pages == null && minutes == null && note.isEmpty && !_useProgress) {
+    final empty = pages == null &&
+        minutes == null &&
+        note.isEmpty &&
+        (!active ||
+            !_useProgress ||
+            _progress.round() == roundProgress(widget.book, widget.round));
+    if (widget.existing == null && empty) {
       setState(() => _emptyErr = '至少填一项：页数、时长，或给个进度');
       return;
     }
 
-    context.read<AppStore>().addLog(
-          widget.book.id,
-          widget.round.id,
-          LogInput(
-            at: _at,
+    final input = LogInput(
+            at: recordTimestamp(_at, explicitTime: _explicitTime),
             pages: pages,
             minutes: minutes,
-            progress: _useProgress ? _progress.round() : null,
+            // 已读完的轮次不改进度，沿用这条记录原来的进度。
+            progress: active
+                ? (_useProgress ? _progress.round() : null)
+                : widget.existing?.progress,
             note: note,
-          ),
-        );
+          );
+    final store = context.read<AppStore>();
+    try {
+      if (widget.existing == null) {
+        store.addLog(widget.book.id, widget.round.id, input);
+      } else {
+        store.updateLog(
+            widget.book.id, widget.round.id, widget.existing!.id, input);
+      }
+    } on ArgumentError catch (error) {
+      setState(() => _emptyErr = '${error.message}');
+      return;
+    } on StateError catch (error) {
+      setState(() => _emptyErr = error.message);
+      return;
+    }
     Navigator.of(context).pop(true);
   }
 
@@ -631,17 +778,12 @@ class _LogFormState extends State<_LogForm> {
         Flexible(
           child: SheetBody(
             children: [
-              Field(
-                label: '阅读时间',
-                child: PickerRow(
-                  text: formatDateTime(_at),
-                  onTap: () async {
-                    final picked = await pickDateTime(context, _at);
-                    if (picked == null || !mounted) return;
-                    setState(() => _at = picked);
-                  },
-                ),
-              ),
+              RecordDateTimeField(
+                  label: '阅读日期',
+                  value: _at,
+                  preserveTime: widget.existing != null,
+                  onTimeSelected: () => _explicitTime = true,
+                  onChanged: (value) => setState(() => _at = value)),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -670,18 +812,20 @@ class _LogFormState extends State<_LogForm> {
                   ),
                 ],
               ),
-              Field(
-                label: '估计总进度',
-                hint: total == null
-                    ? '没填总页数时，只能手动估一个百分比'
-                    : '也可以不填，系统会按已读 $total 页来估算',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          '${_progress.round()}%',
+              // 进度只属于正在读的这一轮；已读完的轮次不再改进度。
+              if (widget.round.isActive)
+                Field(
+                  label: '估计总进度',
+                  hint: (total ?? 0) <= 0
+                      ? '没填总页数时，只能手动估一个百分比'
+                      : '也可以不填，系统会按已读 $total 页来估算',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            '${_progress.round()}%',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w700,
@@ -741,20 +885,18 @@ class _LogFormState extends State<_LogForm> {
 /* 3. 补记往期阅读                                                     */
 /* ------------------------------------------------------------------ */
 
-Future<bool?> showPastRoundSheet(BuildContext context, {required Book book}) {
-  return _openSheet<bool>(
-    context,
-    title: '补记往期阅读',
-    subtitle: '记下以前读完的时间，不影响当前进度',
-    child: _PastRoundForm(book: book),
-  );
+Future<bool?> showPastRoundSheet(BuildContext context,
+    {required Book book, ReadingRound? round}) {
+  return _openSheet<bool>(context,
+    title: round == null ? '补记往期阅读' : '修改阅读记录',
+    subtitle: round?.isActive == true ? '修改本轮开始时间和感想，阅读明细可单独编辑' : '记录开始、结束时间与感想，不填写进度',
+    child: _PastRoundForm(book: book, existing: round));
 }
 
 class _PastRoundForm extends StatefulWidget {
-  const _PastRoundForm({required this.book});
-
+  const _PastRoundForm({required this.book, this.existing});
   final Book book;
-
+  final ReadingRound? existing;
   @override
   State<_PastRoundForm> createState() => _PastRoundFormState();
 }
@@ -762,138 +904,70 @@ class _PastRoundForm extends StatefulWidget {
 class _PastRoundFormState extends State<_PastRoundForm> {
   late DateTime _started;
   late DateTime _finished;
-  late final TextEditingController _pages;
-  late final TextEditingController _minutes;
+  late bool _startedExplicit;
+  late bool _finishedExplicit;
   late final TextEditingController _note;
   String? _rangeErr;
+
+  bool get _active => widget.existing?.isActive == true;
 
   @override
   void initState() {
     super.initState();
-    _finished = DateTime.now();
-    _started = DateTime.now().subtract(const Duration(days: 7));
-    _pages = TextEditingController();
-    _minutes = TextEditingController();
-    _note = TextEditingController();
+    final round = widget.existing;
+    _finished = round?.finishedAt ?? DateTime.now();
+    _started = round?.startedAt ?? _finished.subtract(const Duration(days: 7));
+    _startedExplicit = _finishedExplicit = round != null;
+    _note = TextEditingController(text: round == null ? '' : roundReflection(round));
   }
 
   @override
-  void dispose() {
-    _pages.dispose();
-    _minutes.dispose();
-    _note.dispose();
-    super.dispose();
-  }
+  void dispose() { _note.dispose(); super.dispose(); }
 
   void _submit() {
-    if (_finished.isBefore(_started)) {
+    final now = DateTime.now();
+    final start = recordTimestamp(_started, explicitTime: _startedExplicit, now: now);
+    final finish = recordTimestamp(_finished, explicitTime: _finishedExplicit, now: now);
+    if (!_active && finish.isBefore(start)) {
       setState(() => _rangeErr = '完成时间不能早于开始时间');
       return;
     }
-    context.read<AppStore>().addPastRound(
-          widget.book.id,
-          PastRoundInput(
-            startedAt: _started,
-            finishedAt: _finished,
-            pages: parseIntOrNull(_pages.text),
-            minutes: parseIntOrNull(_minutes.text),
-            note: _note.text,
-          ),
-        );
+    if (_active && widget.existing!.logs.any((log) => log.at.isBefore(start))) {
+      setState(() => _rangeErr = '开始时间不能晚于本轮最早阅读记录');
+      return;
+    }
+    final store = context.read<AppStore>();
+    if (widget.existing == null) {
+      store.addPastRound(widget.book.id, PastRoundInput(
+          startedAt: start, finishedAt: finish, note: _note.text));
+    } else {
+      store.updateRound(widget.book.id, widget.existing!.id,
+          startedAt: start, finishedAt: _active ? null : finish, note: _note.text);
+    }
     Navigator.of(context).pop(true);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Flexible(
-          child: SheetBody(
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Field(
-                      label: '开始日期',
-                      child: PickerRow(
-                        text: formatDate(_started),
-                        onTap: () async {
-                          final d = await pickDayOnly(context, _started);
-                          if (d == null || !mounted) return;
-                          setState(() => _started = d);
-                        },
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Field(
-                      label: '完成日期',
-                      error: _rangeErr,
-                      child: PickerRow(
-                        text: formatDate(_finished),
-                        onTap: () async {
-                          final d = await pickDayOnly(context, _finished);
-                          if (d == null || !mounted) return;
-                          setState(() => _finished = d);
-                        },
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Field(
-                      label: '累计页数',
-                      optional: true,
-                      child: NumberField(
-                        controller: _pages,
-                        hintText: '0',
-                        suffix: '页',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Field(
-                      label: '累计时长',
-                      optional: true,
-                      child: NumberField(
-                        controller: _minutes,
-                        hintText: '0',
-                        suffix: '分钟',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Field(
-                label: '备注',
-                optional: true,
-                child: TextField(
-                  controller: _note,
-                  maxLines: 3,
-                  decoration: const InputDecoration(hintText: '当时的感受'),
-                ),
-              ),
-            ],
-          ),
-        ),
-        SheetFooter(
-          child: AppButton(
-            label: '保存这一轮',
-            kind: BtnKind.primary,
-            expand: true,
-            onPressed: _submit,
-          ),
-        ),
-      ],
-    );
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      Flexible(child: SheetBody(children: [
+        RecordDateTimeField(key: const Key('round-start'), label: '开始日期', value: _started,
+          preserveTime: widget.existing != null,
+          onTimeSelected: () => _startedExplicit = true,
+          onChanged: (value) => setState(() { _started = value; _rangeErr = null; })),
+        if (!_active) RecordDateTimeField(key: const Key('round-finish'), label: '完成日期', value: _finished,
+          preserveTime: widget.existing != null,
+          onTimeSelected: () => _finishedExplicit = true,
+          onChanged: (value) => setState(() { _finished = value; _rangeErr = null; })),
+        if (_rangeErr != null) Text(_rangeErr!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+        Field(label: '感想 / 心得', optional: true,
+          child: TextField(controller: _note, maxLines: 4,
+            decoration: const InputDecoration(hintText: '记下这次阅读的感受与收获'))),
+      ])),
+      SheetFooter(child: AppButton(
+        label: widget.existing == null ? '保存这一轮' : '保存修改',
+        kind: BtnKind.primary, expand: true, onPressed: _submit)),
+    ]);
   }
 }
 
@@ -905,7 +979,7 @@ Future<bool?> showMovieSheet(BuildContext context, {Movie? movie}) {
   return _openSheet<bool>(
     context,
     title: movie == null ? '添加电影' : '编辑电影',
-    subtitle: '名称与导演必填',
+    subtitle: '只需填写电影名称，其余可以以后再补',
     child: _MovieForm(existing: movie),
   );
 }
@@ -925,7 +999,6 @@ class _MovieFormState extends State<_MovieForm> {
   late final TextEditingController _year;
   late final TextEditingController _note;
   String? _titleErr;
-  String? _directorErr;
 
   @override
   void initState() {
@@ -951,9 +1024,8 @@ class _MovieFormState extends State<_MovieForm> {
     final director = _director.text.trim();
     setState(() {
       _titleErr = title.isEmpty ? '名称不能为空' : null;
-      _directorErr = director.isEmpty ? '导演不能为空' : null;
     });
-    if (title.isEmpty || director.isEmpty) return;
+    if (title.isEmpty) return;
 
     final store = context.read<AppStore>();
     final input = MovieInput(
@@ -985,19 +1057,16 @@ class _MovieFormState extends State<_MovieForm> {
                 child: TextField(
                   controller: _title,
                   textInputAction: TextInputAction.next,
-                  decoration:
-                      const InputDecoration(hintText: '例如：肖申克的救赎'),
+                  decoration: const InputDecoration(hintText: '例如：肖申克的救赎'),
                 ),
               ),
               Field(
                 label: '导演',
-                required: true,
-                error: _directorErr,
+                optional: true,
                 child: TextField(
                   controller: _director,
                   textInputAction: TextInputAction.next,
-                  decoration:
-                      const InputDecoration(hintText: '例如：弗兰克·德拉邦特'),
+                  decoration: const InputDecoration(hintText: '例如：弗兰克·德拉邦特'),
                 ),
               ),
               Field(
@@ -1039,21 +1108,29 @@ class _MovieFormState extends State<_MovieForm> {
 /* 5. 观影记录                                                         */
 /* ------------------------------------------------------------------ */
 
-Future<bool?> showWatchSheet(BuildContext context, {required Movie movie}) {
+Future<bool?> showWatchSheet(BuildContext context,
+    {required Movie movie, bool past = false, WatchRecord? watch}) {
   return _openSheet<bool>(
     context,
-    title: movie.watches.isEmpty ? '标记为看过' : '再看一次',
-    subtitle: movie.watches.isEmpty
-        ? '补上观看时间，就变成已看 1 次'
-        : '这将是第 ${movie.watches.length + 1} 次观看',
-    child: _WatchForm(movie: movie),
+    title: watch != null
+        ? '修改观影记录'
+        : past
+            ? '补记往期观影'
+            : movie.watches.isEmpty
+                ? '标记为看过'
+                : '再看一次',
+    subtitle: watch != null
+        ? '改完时间会重新排序'
+        : '可选择任意过去日期，观看次数按时间自动排序',
+    child: _WatchForm(movie: movie, existing: watch),
   );
 }
 
 class _WatchForm extends StatefulWidget {
-  const _WatchForm({required this.movie});
+  const _WatchForm({required this.movie, this.existing});
 
   final Movie movie;
+  final WatchRecord? existing;
 
   @override
   State<_WatchForm> createState() => _WatchFormState();
@@ -1061,14 +1138,18 @@ class _WatchForm extends StatefulWidget {
 
 class _WatchFormState extends State<_WatchForm> {
   late DateTime _at;
+  bool _explicitTime = false;
   int? _rating;
   late final TextEditingController _note;
 
   @override
   void initState() {
     super.initState();
-    _at = DateTime.now();
-    _note = TextEditingController();
+    final watch = widget.existing;
+    _at = watch?.at ?? DateTime.now();
+    _explicitTime = watch != null;
+    _rating = watch?.rating;
+    _note = TextEditingController(text: watch?.note ?? '');
   }
 
   @override
@@ -1078,12 +1159,25 @@ class _WatchFormState extends State<_WatchForm> {
   }
 
   void _submit() {
-    context.read<AppStore>().addWatch(
-          widget.movie.id,
-          at: _at,
-          rating: _rating,
-          note: _note.text,
-        );
+    final store = context.read<AppStore>();
+    final at = recordTimestamp(_at, explicitTime: _explicitTime);
+    final existing = widget.existing;
+    if (existing == null) {
+      store.addWatch(
+        widget.movie.id,
+        at: at,
+        rating: _rating,
+        note: _note.text,
+      );
+    } else {
+      store.updateWatch(
+        widget.movie.id,
+        existing.id,
+        at: at,
+        rating: _rating,
+        note: _note.text,
+      );
+    }
     Navigator.of(context).pop(true);
   }
 
@@ -1095,17 +1189,11 @@ class _WatchFormState extends State<_WatchForm> {
         Flexible(
           child: SheetBody(
             children: [
-              Field(
-                label: '观看时间',
-                child: PickerRow(
-                  text: formatDateTime(_at),
-                  onTap: () async {
-                    final picked = await pickDateTime(context, _at);
-                    if (picked == null || !mounted) return;
-                    setState(() => _at = picked);
-                  },
-                ),
-              ),
+              RecordDateTimeField(
+                  label: '观看日期',
+                  value: _at,
+                  onTimeSelected: () => _explicitTime = true,
+                  onChanged: (value) => setState(() => _at = value)),
               Field(
                 label: '打分',
                 optional: true,

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:shuying/main.dart';
+import 'package:shuying/services/pro_store.dart';
 import 'package:shuying/store/app_store.dart';
 
 /// 首次启动冒烟测试：
@@ -23,8 +24,11 @@ void main() {
       return value;
     }))!;
     await tester.pumpWidget(
-      ChangeNotifierProvider<AppStore>.value(
-        value: store,
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<AppStore>.value(value: store),
+          ChangeNotifierProvider<ProStore>(create: (_) => ProStore()),
+        ],
         child: const ShuYingApp(),
       ),
     );

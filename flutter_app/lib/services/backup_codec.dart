@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../models/models.dart';
+import '../domain/books.dart' show chronologicalRounds;
 
 class BackupData {
   const BackupData(this.books, this.movies);
@@ -26,12 +27,14 @@ BackupData decodeBackup(String text, {bool legacy = false}) {
     _number(book, 'totalPages', 0);
     _number(book, 'accent', 0, max: 0xffffffff);
     _string(book, 'cover');
+    _string(book, 'edition');
     final rounds = _items(book['rounds']);
     for (final round in rounds) {
       _id(round);
       _number(round, 'index', 1);
       _date(round, 'startedAt');
       _date(round, 'finishedAt', optional: true);
+      _string(round, 'note');
       for (final log in _items(round['logs'])) {
         _id(log);
         _date(log, 'at');
@@ -54,7 +57,11 @@ BackupData decodeBackup(String text, {bool legacy = false}) {
   }
   // 全部校验和解析完成后，调用方才允许修改本机记录。
   return BackupData(
-      books.map(Book.fromJson).toList(), movies.map(Movie.fromJson).toList());
+      books.map((json) {
+        final book = Book.fromJson(json);
+        return book.copyWith(rounds: chronologicalRounds(book.rounds));
+      }).toList(),
+      movies.map(Movie.fromJson).toList());
 }
 
 List<Map<String, dynamic>> _items(dynamic value) {
@@ -83,7 +90,7 @@ void _id(Map<String, dynamic> value) {
 void _entity(Map<String, dynamic> value, String creator) {
   if (value['title'] is! String ||
       (value['title'] as String).trim().isEmpty ||
-      value[creator] is! String) {
+      (value[creator] != null && value[creator] is! String)) {
     throw const FormatException('标题或作者信息格式错误');
   }
   _date(value, 'createdAt');
@@ -141,16 +148,8 @@ BackupData mergeBackup(
         );
       }
     }
-    final ordered = rounds.values.toList()
-      ..sort((a, b) {
-        final date = a.startedAt.compareTo(b.startedAt);
-        return date != 0 ? date : a.id.compareTo(b.id);
-      });
     mergedBooks[b.id] = (incomingNewer ? b : local).copyWith(
-      rounds: [
-        for (var i = 0; i < ordered.length; i++)
-          ordered[i].copyWith(index: i + 1)
-      ],
+      rounds: chronologicalRounds(rounds.values),
     );
   }
   final mergedMovies = {for (final m in movies) m.id: m};
