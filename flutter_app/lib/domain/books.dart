@@ -70,17 +70,22 @@ String statusLabel(Book book) {
 }
 
 int roundPages(ReadingRound round) =>
+    (!round.isActive ? round.pages : null) ??
     round.logs.fold(0, (sum, l) => sum + (l.pages ?? 0));
 
 int roundMinutes(ReadingRound round) =>
+    (!round.isActive ? round.minutes : null) ??
     round.logs.fold(0, (sum, l) => sum + (l.minutes ?? 0));
 
 int roundLogCount(ReadingRound round) => round.logs.length;
 
 /// 兼容旧轮次中保存在明细里的感想；显式保存空文本表示用户已清空。
-String roundReflection(ReadingRound round) => round.note ??
-    sortedLogs(round).map((log) => log.note?.trim() ?? '')
-        .where((note) => note.isNotEmpty).join('\n\n');
+String roundReflection(ReadingRound round) =>
+    round.note ??
+    sortedLogs(round)
+        .map((log) => log.note?.trim() ?? '')
+        .where((note) => note.isNotEmpty)
+        .join('\n\n');
 
 /// 阅读记录按时间倒序
 List<ReadingLog> sortedLogs(ReadingRound round) {
@@ -92,17 +97,27 @@ List<ReadingLog> sortedLogs(ReadingRound round) {
   return entries.map((entry) => entry.value).toList();
 }
 
-/// 当前进度：优先取最近一次显式填写的进度，否则按页数估算。
+/// 按时间推导每一笔进度；自动页数从前一笔进度继续累加。
+Iterable<int?> readingProgresses(Book book, Iterable<ReadingLog> logs) sync* {
+  double? progress;
+  for (final log in logs) {
+    if (log.progress != null) {
+      progress = log.progress!.toDouble();
+    } else if ((book.totalPages ?? 0) > 0 && log.pages != null) {
+      progress = (progress ?? 0) + log.pages! / book.totalPages! * 100;
+    }
+    yield progress == null ? null : clampInt(progress, 0, 100);
+  }
+}
+
+/// 当前进度随最新记录变化，历史轮次不显示进度。
 int roundProgress(Book book, ReadingRound? round) {
   if (round == null || !round.isActive) return 0;
-  for (final l in sortedLogs(round)) {
-    if (l.progress != null) return clampInt(l.progress!, 0, 100);
+  var progress = 0;
+  for (final value in readingProgresses(book, sortedLogs(round).reversed)) {
+    if (value != null) progress = value;
   }
-  final total = book.totalPages;
-  if (total != null && total > 0) {
-    return clampInt(roundPages(round) / total * 100, 0, 100);
-  }
-  return 0;
+  return progress;
 }
 
 class BookSummary {

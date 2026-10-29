@@ -40,10 +40,10 @@ class _YearReviewPageState extends State<YearReviewPage> {
     final readingDays = widget.preview ? 90 : review.readingDays;
     final watches = widget.preview ? 24 : review.watchTimes;
     final rating = widget.preview
-        ? '4.5'
+        ? '9.0'
         : review.averageRating?.toStringAsFixed(1) ?? '—';
     final text = '$year 年书影温故\n阅读 $readTimes 次 · $pages 页 · $minutes 分钟\n'
-        '阅读 $readingDays 天 · 观影 $watches 次 · 平均评分 $rating';
+        '阅读 $readingDays 天 · 观影 $watches 次 · 平均评分 $rating/10';
     return Scaffold(
       appBar: AppBar(title: Text(widget.preview ? '示例年度回顾' : '年度书影回顾')),
       body: SafeArea(
@@ -72,7 +72,7 @@ class _YearReviewPageState extends State<YearReviewPage> {
             StatGrid(cells: [
               StatCell(value: '$readingDays', label: '阅读天数'),
               StatCell(value: '$watches', label: '观影次数'),
-              StatCell(value: rating, label: '平均评分')
+              StatCell(value: rating, label: '平均分 /10')
             ]),
             const SizedBox(height: 24),
             const Text('12 个月阅读与观影'),

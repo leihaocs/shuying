@@ -16,6 +16,8 @@ set -euo pipefail
 APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$APP_DIR"
 source "$APP_DIR/tool/build_version.sh"
+APP_VER_NAME="$SHUYING_IOS_VERSION_NAME"
+APP_VER_BUILD="$SHUYING_IOS_BUILD_NUMBER"
 
 export PATH="$HOME/development/flutter/bin:$PATH"
 export PUB_HOSTED_URL="https://pub.flutter-io.cn"
@@ -140,6 +142,8 @@ cat > "$EXPORT_PLIST" <<PLIST
 	<string>${DEST}</string>
 	<key>signingStyle</key>
 	<string>automatic</string>
+	<key>manageAppVersionAndBuildNumber</key>
+	<false/>
 $( [ -n "$TEAM_ID" ] && echo "	<key>teamID</key>
 	<string>${TEAM_ID}</string>" )
 	<key>uploadBitcode</key>
@@ -210,7 +214,7 @@ flutter pub get
 (cd ios && pod install)
 # 与三端脚本共用已校验的版本，禁止自动累加。
 echo "==> 版本号注入：$APP_VER_NAME ($APP_VER_BUILD)"
-flutter build ipa --release --dart-define="APP_VERSION=$APP_VER_NAME ($APP_VER_BUILD)" --export-options-plist="$EXPORT_PLIST"
+flutter build ipa --release --build-name="$APP_VER_NAME" --build-number="$APP_VER_BUILD" --dart-define="APP_VERSION=$APP_VER_NAME ($APP_VER_BUILD)" --export-options-plist="$EXPORT_PLIST"
 
 IPA="$(ls -1 build/ios/ipa/*.ipa 2>/dev/null | head -1)"
 if [ -n "$IPA" ]; then

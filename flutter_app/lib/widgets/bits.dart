@@ -290,7 +290,7 @@ class MovieStatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
-    final watched = ml.movieStatus(movie) == MovieStatus.watched;
+    final watched = ml.movieStatus(movie) != MovieStatus.want;
     return Pill(
       text: ml.movieStatusLabel(movie),
       background: watched ? c.okSoft : c.infoSoft,
@@ -470,10 +470,12 @@ class RoundIconButton extends StatelessWidget {
 /* ------------------------------------------------------------------ */
 
 class NavBar extends StatelessWidget {
-  const NavBar({super.key, required this.title, this.actions});
+  const NavBar(
+      {super.key, required this.title, this.actions, this.showBack = true});
 
   final String title;
   final List<Widget>? actions;
+  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
@@ -487,10 +489,11 @@ class NavBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          RoundIconButton(
-            icon: Icons.arrow_back_ios_new_rounded,
-            onPressed: () => Navigator.of(context).maybePop(),
-          ),
+          if (showBack)
+            RoundIconButton(
+              icon: Icons.arrow_back_ios_new_rounded,
+              onPressed: () => Navigator.of(context).maybePop(),
+            ),
           Expanded(
             child: Text(
               title,
@@ -529,29 +532,72 @@ class StarRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+    return Wrap(
+      spacing: 4,
+      runSpacing: 2,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        for (var i = 1; i <= 5; i++)
-          GestureDetector(
-            onTap: onChanged == null
-                ? null
-                : () => onChanged!(rating == i ? null : i),
-            child: Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: Icon(
-                (rating ?? 0) >= i
-                    ? Icons.star_rounded
-                    : Icons.star_outline_rounded,
-                size: size,
-                color:
-                    (rating ?? 0) >= i ? const Color(0xFFE0A33A) : c.surface3,
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          for (var i = 1; i <= 5; i++)
+            GestureDetector(
+              onTap: onChanged == null
+                  ? null
+                  : () => onChanged!(rating == i * 2 ? null : i * 2),
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Icon(
+                  (rating ?? 0) >= i * 2
+                      ? Icons.star_rounded
+                      : (rating ?? 0) == i * 2 - 1
+                          ? Icons.star_half_rounded
+                          : Icons.star_outline_rounded,
+                  size: size,
+                  color: (rating ?? 0) >= i * 2 - 1
+                      ? const Color(0xFFE0A33A)
+                      : c.surface3,
+                ),
               ),
             ),
-          ),
+        ]),
+        if (rating != null)
+          Text('$rating/10',
+              style: TextStyle(fontSize: size * .8, color: c.text2)),
       ],
     );
   }
+}
+
+/// 单个紧凑选择框，展开时再展示十分制选项。
+class RatingPicker extends StatelessWidget {
+  const RatingPicker({super.key, this.rating, required this.onChanged});
+  final int? rating;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  Widget build(BuildContext context) => Wrap(
+        spacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          SizedBox(
+              width: 128,
+              child: DropdownButton<int>(
+                value: rating,
+                hint: const Text('未评分'),
+                isExpanded: true,
+                menuMaxHeight: 280,
+                style:
+                    TextStyle(fontSize: 14, color: AppColors.of(context).text),
+                items: [
+                  for (var score = 1; score <= 10; score++)
+                    DropdownMenuItem(value: score, child: Text('$score 分'))
+                ],
+                onChanged: onChanged,
+              )),
+          if (rating != null)
+            TextButton(
+                onPressed: () => onChanged(null), child: const Text('清除评分')),
+        ],
+      );
 }
 
 /* ------------------------------------------------------------------ */

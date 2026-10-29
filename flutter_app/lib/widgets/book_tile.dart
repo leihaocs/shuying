@@ -71,6 +71,9 @@ class BookTile extends StatelessWidget {
                       runSpacing: 4,
                       children: [
                         BookStatusPill(book),
+                        if (book.rating != null)
+                          Text('${book.rating}/10',
+                              style: TextStyle(fontSize: 12, color: c.text2)),
                         Text(
                           _meta(summary),
                           maxLines: 1,

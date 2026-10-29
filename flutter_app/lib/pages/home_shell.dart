@@ -5,6 +5,7 @@ import '../widgets/sheets.dart';
 import 'books_page.dart';
 import 'movies_page.dart';
 import 'stats_page.dart';
+import 'settings_page.dart';
 
 class HomeShell extends StatefulWidget {
   /// [initialIndex] 仅用于上架截图（`--dart-define=SHUYING_TAB=n`）直达指定页，
@@ -24,6 +25,7 @@ class _HomeShellState extends State<HomeShell> {
     _TabSpec('📚', '书架'),
     _TabSpec('🎬', '电影'),
     _TabSpec('📊', '统计'),
+    _TabSpec('⚙️', '设置'),
   ];
 
   @override
@@ -34,9 +36,14 @@ class _HomeShellState extends State<HomeShell> {
       backgroundColor: c.bg,
       body: IndexedStack(
         index: _index,
-        children: const [BooksPage(), MoviesPage(), StatsPage()],
+        children: const [
+          BooksPage(),
+          MoviesPage(),
+          StatsPage(),
+          SettingsPage(asTab: true)
+        ],
       ),
-      floatingActionButton: _index == 2
+      floatingActionButton: _index >= 2
           ? null
           : Material(
               color: Colors.transparent,

@@ -385,6 +385,98 @@ void main() {
     await tester.pumpWidget(const SizedBox());
   });
 
+  testWidgets('编辑阅读观影保留原时间并重排，历史可改页数时长但无进度', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final store = AppStore();
+    final pro = ProStore();
+    addTearDown(() {
+      store.dispose();
+      pro.dispose();
+    });
+    final book = store.addBook(BookInput(title: '编辑', totalPages: 100));
+    store.startReading(book.id);
+    final roundId = store.books.single.rounds.single.id;
+    store.addLog(book.id, roundId,
+        LogInput(at: DateTime(2000, 1, 1, 8, 35), pages: 10, progress: 10));
+    store.addLog(book.id, roundId,
+        LogInput(at: DateTime(2005), pages: 20, progress: 30));
+    final log = books.sortedLogs(store.books.single.rounds.single).last;
+    final movie = store.addMovie(MovieInput(title: '编辑观影'));
+    store.addWatch(movie.id, at: DateTime(2000, 1, 1, 8, 35), rating: 2);
+    final watch = store.movies.single.watches.single;
+    late BuildContext host;
+    await tester.pumpWidget(harness(Scaffold(body: Builder(builder: (context) {
+      host = context;
+      return const SizedBox();
+    })), store, pro));
+    unawaited(showLogSheet(host,
+        book: store.books.single,
+        round: store.books.single.rounds.single,
+        log: log));
+    await tester.pumpAndSettle();
+    var field =
+        tester.widget<RecordDateTimeField>(find.byType(RecordDateTimeField));
+    expect(field.preserveTime, isTrue);
+    field.onChanged(DateTime(2010, 1, 1, 8, 35));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+        find.descendant(
+            of: find.byType(NumberField).first,
+            matching: find.byType(TextField)),
+        '25');
+    tester.widget<Slider>(find.byType(Slider)).onChanged!(40);
+    await tester.ensureVisible(find.text('保存记录'));
+    await tester.tap(find.text('保存记录'));
+    await tester.pumpAndSettle();
+    final updated = books.sortedLogs(store.books.single.rounds.single).first;
+    expect(updated.id, log.id);
+    expect(updated.at, DateTime(2010, 1, 1, 8, 35));
+    expect(updated.pages, 25);
+    expect(updated.progress, 40);
+    unawaited(showWatchSheet(host, movie: store.movies.single, watch: watch));
+    await tester.pumpAndSettle();
+    field =
+        tester.widget<RecordDateTimeField>(find.byType(RecordDateTimeField));
+    expect(field.preserveTime, isTrue);
+    await tester.enterText(find.byType(TextField), '更新感想');
+    await tester.ensureVisible(find.text('保存'));
+    await tester.tap(find.text('保存'));
+    await tester.pumpAndSettle();
+    expect(store.movies.single.watches.single.id, watch.id);
+    expect(store.movies.single.watches.single.at, watch.at);
+    expect(store.movies.single.watches.single.note, '更新感想');
+    store.addPastRound(
+        book.id,
+        PastRoundInput(
+            startedAt: DateTime(1990),
+            finishedAt: DateTime(1990, 2),
+            note: '历史感想'));
+    final historical = store.books.single.rounds.first;
+    unawaited(
+        showPastRoundSheet(host, book: store.books.single, round: historical));
+    await tester.pumpAndSettle();
+    expect(find.byType(NumberField), findsNWidgets(2));
+    expect(find.byType(Slider), findsNothing);
+    expect(find.byType(RecordDateTimeField), findsNWidgets(2));
+    await tester.enterText(find.byType(TextField).at(0), '120');
+    await tester.enterText(find.byType(TextField).at(1), '150');
+    await tester.enterText(find.byType(TextField).last, '修订后的历史感想');
+    await tester.ensureVisible(find.text('保存修改'));
+    await tester.tap(find.text('保存修改'));
+    await tester.pumpAndSettle();
+    expect(store.books.single.rounds.first.note, '修订后的历史感想');
+    expect(store.books.single.rounds.first.logs, isEmpty);
+    expect(store.books.single.rounds.first.pages, 120);
+    expect(store.books.single.rounds.first.minutes, 150);
+    await tester
+        .pumpWidget(harness(const Scaffold(body: StatsPage()), store, pro));
+    await tester.pumpAndSettle();
+    expect(find.text('165'), findsOneWidget); // 当前 45 页 + 历史 120 页。
+    await tester.pumpWidget(const SizedBox());
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('商店查询无回调会超时释放busy，iOS离线仍有恢复购买入口', (tester) async {
     final pro = ProStore();
     addTearDown(() {

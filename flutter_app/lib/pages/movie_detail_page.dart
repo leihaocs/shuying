@@ -127,7 +127,7 @@ class MovieDetailPage extends StatelessWidget {
                       ),
                       StatCell(
                         value: avg == null ? '—' : avg.toStringAsFixed(1),
-                        label: '平均评分',
+                        label: '平均分 /10',
                       ),
                       StatCell(
                         value: watches.isEmpty

@@ -1,10 +1,16 @@
 import '../models/models.dart';
 
-MovieStatus movieStatus(Movie movie) =>
-    movie.watches.isEmpty ? MovieStatus.want : MovieStatus.watched;
+MovieStatus movieStatus(Movie movie) => movie.watches.isEmpty
+    ? MovieStatus.want
+    : movie.watches.length == 1
+        ? MovieStatus.watched
+        : MovieStatus.rewatched;
 
-String movieStatusLabel(Movie movie) =>
-    movie.watches.isEmpty ? '想看' : '已看${movie.watches.length}次';
+String movieStatusLabel(Movie movie) => movie.watches.isEmpty
+    ? '想看'
+    : movie.watches.length == 1
+        ? '已看1次'
+        : '多次观看 · ${movie.watches.length}次';
 
 /// 观影记录按时间倒序
 List<WatchRecord> sortedWatches(Movie movie) {

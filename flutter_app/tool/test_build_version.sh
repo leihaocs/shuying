@@ -11,6 +11,8 @@ for attempt in 1 2; do
     APP_DIR="$FIXTURE_DIR"
     source "$TOOL_DIR/build_version.sh"
     test "$SHUYING_OFFICIAL_BUILD_NUMBER" = 5
+    test "$SHUYING_IOS_VERSION_NAME" = '1.0.1'
+    test "$SHUYING_IOS_BUILD_NUMBER" = 7
     test "$APP_VER_RAW" = '1.0.0+6'
     test "$DART_DEFINE" = '--dart-define=APP_VERSION=1.0.0 (6)'
   )
@@ -22,4 +24,4 @@ if (APP_DIR="$FIXTURE_DIR"; source "$TOOL_DIR/build_version.sh") > "$FIXTURE_DIR
   exit 1
 fi
 grep -q '候选号必须固定为 6' "$FIXTURE_DIR/output"
-echo '通过：重复构建保持 6，误升号 7 被拒绝。'
+echo '通过：iOS 明确授权固定 1.0.1(7)，其他平台重复构建保持 6，全局误升到 7 被拒绝。'

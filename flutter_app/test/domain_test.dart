@@ -135,7 +135,7 @@ void main() {
       expect(movieStatusLabel(m), '想看');
     });
 
-    test('看两次 -> 已看 2 次', () {
+    test('看两次 -> 多次观看，不再属于只看一次', () {
       final m = Movie(
         id: 'm1',
         title: '肖申克的救赎',
@@ -147,8 +147,8 @@ void main() {
           WatchRecord(id: 'w2', at: DateTime(2026, 2, 3), rating: 5),
         ],
       );
-      expect(movieStatus(m), MovieStatus.watched);
-      expect(movieStatusLabel(m), '已看2次');
+      expect(movieStatus(m), MovieStatus.rewatched);
+      expect(movieStatusLabel(m), '多次观看 · 2次');
       expect(lastWatch(m)!.at, DateTime(2026, 2, 3));
     });
   });
