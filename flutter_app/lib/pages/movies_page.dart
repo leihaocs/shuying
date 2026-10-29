@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../domain/movies.dart' as ml;
+import '../models/models.dart';
 import '../store/app_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bits.dart';
@@ -17,7 +18,7 @@ class MoviesPage extends StatefulWidget {
 }
 
 class _MoviesPageState extends State<MoviesPage> {
-  int _filter = 0; // 0 全部 1 想看 2 已看
+  int _filter = 0; // 全部、想看、已看、多次观看。
 
   @override
   Widget build(BuildContext context) {
@@ -27,9 +28,13 @@ class _MoviesPageState extends State<MoviesPage> {
     final all = [...store.movies]
       ..sort((a, b) => ml.movieLastTouch(b).compareTo(ml.movieLastTouch(a)));
 
-    final want = all.where((m) => m.watches.isEmpty).toList();
-    final watched = all.where((m) => m.watches.isNotEmpty).toList();
-    final list = _filter == 0 ? all : (_filter == 1 ? want : watched);
+    final want =
+        all.where((m) => ml.movieStatus(m) == MovieStatus.want).toList();
+    final watched =
+        all.where((m) => ml.movieStatus(m) == MovieStatus.watched).toList();
+    final rewatched =
+        all.where((m) => ml.movieStatus(m) == MovieStatus.rewatched).toList();
+    final list = [all, want, watched, rewatched][_filter];
 
     return SafeArea(
       bottom: false,
@@ -39,7 +44,7 @@ class _MoviesPageState extends State<MoviesPage> {
             title: '电影',
             subtitle: all.isEmpty
                 ? '还没有片子，点右下角加一部'
-                : '共 ${all.length} 部 · 已看 ${watched.length} 部',
+                : '共 ${all.length} 部 · 看过 ${watched.length + rewatched.length} 部',
           ),
           SegmentedBar(
             index: _filter,
@@ -48,6 +53,7 @@ class _MoviesPageState extends State<MoviesPage> {
               SegItem('全部', all.length),
               SegItem('想看', want.length),
               SegItem('已看', watched.length),
+              SegItem('多次观看', rewatched.length),
             ],
           ),
           Expanded(
@@ -59,7 +65,7 @@ class _MoviesPageState extends State<MoviesPage> {
                         icon: all.isEmpty ? '🎬' : '🔍',
                         title: all.isEmpty ? '片单还是空的' : '这里还没有电影',
                         desc: all.isEmpty
-                            ? '点右下角的 + 添加第一部电影\n名称和导演必填'
+                            ? '点右下角的 + 添加第一部电影\n只需填写名称，导演选填'
                             : '换个分类看看，或者添加一部新电影',
                       ),
                     ],

@@ -6,10 +6,24 @@ class YearReview {
     for (final book in books) {
       for (final round in book.rounds) {
         if (round.finishedAt?.year == year) readTimes++;
+        final pageTotal = !round.isActive ? round.pages : null;
+        final minuteTotal = !round.isActive ? round.minutes : null;
+        if (round.finishedAt?.year == year) {
+          pages += pageTotal ?? 0;
+          minutes += minuteTotal ?? 0;
+          monthlyMinutes[round.finishedAt!.month - 1] += minuteTotal ?? 0;
+          if (round.logs.isEmpty &&
+              ((pageTotal ?? 0) > 0 || (minuteTotal ?? 0) > 0)) {
+            activeDays
+                .add('${round.finishedAt!.month}-${round.finishedAt!.day}');
+          }
+        }
         for (final log in round.logs.where((l) => l.at.year == year)) {
-          minutes += log.minutes ?? 0;
-          pages += log.pages ?? 0;
-          monthlyMinutes[log.at.month - 1] += log.minutes ?? 0;
+          if (minuteTotal == null) {
+            minutes += log.minutes ?? 0;
+            monthlyMinutes[log.at.month - 1] += log.minutes ?? 0;
+          }
+          if (pageTotal == null) pages += log.pages ?? 0;
           activeDays.add('${log.at.month}-${log.at.day}');
         }
       }

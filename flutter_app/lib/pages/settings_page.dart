@@ -11,6 +11,7 @@ import 'data_backup_page.dart';
 import 'pro_page.dart';
 import 'privacy_policy_page.dart';
 import 'support_page.dart';
+import 'usage_guide_page.dart';
 
 /* ------------------------------------------------------------------ */
 /* 版本信息                                                            */
@@ -43,7 +44,8 @@ Future<String> _appVersion() {
 ///   - 撤回隐私政策同意（用于重新触发首次启动引导）
 ///   - 清空所有数据
 class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key});
+  const SettingsPage({super.key, this.asTab = false});
+  final bool asTab;
 
   @override
   Widget build(BuildContext context) {
@@ -56,36 +58,66 @@ class SettingsPage extends StatelessWidget {
       body: SafeArea(
           child: Column(
         children: [
-          const NavBar(title: '设置'),
+          NavBar(title: '设置', showBack: !asTab),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: [
-                if (pro.isPro || pro.purchasesEnabled) ...[
+                if (pro.isPro || pro.purchasesEnabled)
                   CardBox(
                       child: _TapRow(
                     icon: Icons.auto_awesome,
-                    title: 'Pro · 年度书影回顾',
+                    title: 'Pro · 高级功能',
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute<void>(
                             builder: (_) => const ProPage())),
+                  ))
+                else
+                  const CardBox(
+                      child: ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.auto_awesome),
+                    title: Text('更多高级功能待开发'),
+                    subtitle: Text('基础记录、统计和备份均可免费使用'),
                   )),
-                  const SizedBox(height: 18),
-                ],
+                const SizedBox(height: 18),
                 const _SectionHeader('外观'),
                 CardBox(
                   child: _TapRow(
-                    icon: store.themeMode == ThemeMode.dark
-                        ? Icons.light_mode_rounded
-                        : Icons.dark_mode_rounded,
+                    icon: Icons.brightness_6_rounded,
                     title: '主题模式',
                     trailing: Text(
-                      store.themeMode == ThemeMode.dark ? '深色' : '浅色',
+                      _themeLabel(store.themeMode),
                       style: TextStyle(fontSize: 13, color: c.text3),
                     ),
-                    onTap: store.toggleTheme,
+                    onTap: () async {
+                      final mode = await showModalBottomSheet<ThemeMode>(
+                        context: context,
+                        useSafeArea: true,
+                        builder: (ctx) => SafeArea(
+                            child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            for (final mode in [
+                              ThemeMode.system,
+                              ThemeMode.light,
+                              ThemeMode.dark
+                            ])
+                              ListTile(
+                                title: Text(_themeLabel(mode)),
+                                selected: mode == store.themeMode,
+                                leading: Icon(mode == store.themeMode
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_off),
+                                onTap: () => Navigator.pop(ctx, mode),
+                              ),
+                          ],
+                        )),
+                      );
+                      if (mode != null) store.setThemeMode(mode);
+                    },
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -160,6 +192,16 @@ class SettingsPage extends StatelessWidget {
                 const SizedBox(height: 24),
                 const _SectionHeader('帮助'),
                 CardBox(
+                    child: _TapRow(
+                  icon: Icons.menu_book_outlined,
+                  title: '使用说明',
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                          builder: (_) => const UsageGuidePage())),
+                )),
+                const SizedBox(height: 8),
+                CardBox(
                   child: _TapRow(
                     icon: Icons.help_outline_rounded,
                     title: '帮助与支持',
@@ -233,6 +275,12 @@ class SettingsPage extends StatelessWidget {
       )),
     );
   }
+
+  String _themeLabel(ThemeMode mode) => mode == ThemeMode.system
+      ? '随系统'
+      : mode == ThemeMode.dark
+          ? '深色'
+          : '浅色';
 
   Future<void> _confirmResetConsent(BuildContext context) async {
     final ok = await confirmSheet(

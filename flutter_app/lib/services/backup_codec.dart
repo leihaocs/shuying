@@ -17,7 +17,8 @@ BackupData decodeBackup(String text, {bool legacy = false}) {
     throw const FormatException('备份必须是 JSON 对象');
   }
   if (!legacy &&
-      (value['app'] != 'bookmovie_revisit' || value['schema'] != 1)) {
+      (value['app'] != 'bookmovie_revisit' ||
+          (value['schema'] != 1 && value['schema'] != 2))) {
     throw const FormatException('不是书影温故备份，或备份版本暂不支持');
   }
   final books = _items(value['books']);
@@ -28,6 +29,7 @@ BackupData decodeBackup(String text, {bool legacy = false}) {
     _number(book, 'accent', 0, max: 0xffffffff);
     _string(book, 'cover');
     _string(book, 'edition');
+    _number(book, 'rating', 1, max: 10);
     final rounds = _items(book['rounds']);
     for (final round in rounds) {
       _id(round);
@@ -35,6 +37,8 @@ BackupData decodeBackup(String text, {bool legacy = false}) {
       _date(round, 'startedAt');
       _date(round, 'finishedAt', optional: true);
       _string(round, 'note');
+      _number(round, 'pages', 0);
+      _number(round, 'minutes', 0);
       for (final log in _items(round['logs'])) {
         _id(log);
         _date(log, 'at');
@@ -51,7 +55,12 @@ BackupData decodeBackup(String text, {bool legacy = false}) {
     for (final watch in _items(movie['watches'])) {
       _id(watch);
       _date(watch, 'at');
-      _number(watch, 'rating', 1, max: 5);
+      if (watch['ratingScale'] != null &&
+          watch['ratingScale'] != 5 &&
+          watch['ratingScale'] != 10) {
+        throw const FormatException('评分制式暂不支持');
+      }
+      _number(watch, 'rating', 1, max: watch['ratingScale'] == 10 ? 10 : 5);
       _string(watch, 'note');
     }
   }

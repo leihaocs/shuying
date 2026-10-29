@@ -80,6 +80,17 @@ class BookDetailPage extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
                 children: [
                   _Hero(book: book, status: status),
+                  const SizedBox(height: 16),
+                  CardBox(
+                      child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionTitle('我的评分（10分制）'),
+                      RatingPicker(
+                          rating: book.rating,
+                          onChanged: (value) => store.rateBook(book.id, value)),
+                    ],
+                  )),
                   if (active != null) ...[
                     const SizedBox(height: 18),
                     _ProgressCard(book: book, round: active, percent: pct),
@@ -87,30 +98,6 @@ class BookDetailPage extends StatelessWidget {
                   const SizedBox(height: 16),
                   _Actions(book: book, active: active, status: status),
                   const SizedBox(height: 24),
-                  if (active != null) ...[
-                    SectionTitle(
-                      '第 ${active.index} 轮 · 阅读记录',
-                      trailing: Text(
-                        '${bl.roundLogCount(active)} 条',
-                        style: TextStyle(fontSize: 12, color: c.text3),
-                      ),
-                    ),
-                    if (active.logs.isEmpty)
-                      CardBox(
-                        padding: const EdgeInsets.all(16),
-                        child: Text(
-                          '还没有记录。读完之后点「记录本次阅读」，填页数或时长，顺便估个进度。',
-                          style: TextStyle(
-                            fontSize: 13.5,
-                            color: c.text3,
-                            height: 1.7,
-                          ),
-                        ),
-                      )
-                    else
-                      _LogTimeline(book: book, round: active),
-                    const SizedBox(height: 24),
-                  ],
                   SectionTitle(
                     '阅读轮次',
                     trailing: Text(
@@ -571,16 +558,16 @@ class _LogTimeline extends StatelessWidget {
                             ),
                             IconButton(
                               icon: Icon(Icons.edit_outlined,
-                                    size: 16, color: c.text3),
-                                splashRadius: 18,
-                                tooltip: '修改',
-                                onPressed: () => showLogSheet(
-                                  context,
-                                  book: book,
-                                  round: round,
-                                  log: l,
-                                ),
+                                  size: 16, color: c.text3),
+                              splashRadius: 18,
+                              tooltip: '修改',
+                              onPressed: () => showLogSheet(
+                                context,
+                                book: book,
+                                round: round,
+                                log: l,
                               ),
+                            ),
                             IconButton(
                               icon: Icon(Icons.close_rounded,
                                   size: 16, color: c.text3),
@@ -696,8 +683,8 @@ class _RoundCardState extends State<_RoundCard> {
                     const SizedBox(height: 2),
                     Text(
                       done
-                          ? '${formatDate(r.startedAt)} → ${formatDate(r.finishedAt)}'
-                          : '始于 ${formatDate(r.startedAt)}',
+                          ? '开始：${formatDateTime(r.startedAt)}\n结束：${formatDateTime(r.finishedAt)}'
+                          : '始于 ${formatDateTime(r.startedAt)}',
                       style: TextStyle(fontSize: 12, color: c.text3),
                     ),
                   ],
@@ -736,17 +723,18 @@ class _RoundCardState extends State<_RoundCard> {
             ],
           ),
           // 这一轮的总结感想（读完整轮才有）。
-          if (r.note != null && r.note!.trim().isNotEmpty) ...[
+          if (bl.roundReflection(r).isNotEmpty) ...[
             const SizedBox(height: 10),
             SizedBox(
               width: double.infinity,
               child: Text(
-                r.note!,
+                bl.roundReflection(r),
                 style: TextStyle(fontSize: 13, color: c.text2, height: 1.6),
               ),
             ),
           ],
-          if (r.logs.isNotEmpty) ...[
+          if (r.logs.isNotEmpty ||
+              (done && (r.pages != null || r.minutes != null))) ...[
             const SizedBox(height: 10),
             Row(
               children: [
@@ -758,17 +746,18 @@ class _RoundCardState extends State<_RoundCard> {
                 ),
               ],
             ),
-            if (_expanded) ...[
+            if (_expanded && r.logs.isNotEmpty) ...[
               const SizedBox(height: 12),
               _LogTimeline(book: widget.book, round: r),
             ],
           ],
           const SizedBox(height: 8),
           AppButton(
-            label: done ? '修改本轮记录' : '补记阅读记录',
+            label: done ? '修改阅读记录' : '修改阅读时间',
             kind: BtnKind.soft,
             expand: true,
-            onPressed: () => showLogSheet(context, book: widget.book, round: r),
+            onPressed: () =>
+                showPastRoundSheet(context, book: widget.book, round: r),
           ),
         ],
       ),

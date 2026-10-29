@@ -69,8 +69,10 @@ build_ohos() {
   flutter pub get
   flutter build "$artifact" --release --no-pub --build-name="$APP_VER_NAME" --build-number="$APP_VER_BUILD" "$DART_DEFINE"
   if [ "$artifact" = app ]; then
+    python3 "$APP_DIR/tool/check_ohos_hap.py" ohos/build/outputs/default/ohos-default-signed.app "$APP_VER_NAME" "$APP_VER_BUILD"
     echo "    APP: ohos/build/outputs/default/ohos-default-signed.app"
   else
+    python3 "$APP_DIR/tool/check_ohos_hap.py" ohos/entry/build/default/outputs/default/entry-default-signed.hap "$APP_VER_NAME" "$APP_VER_BUILD"
     echo "    HAP: ohos/entry/build/default/outputs/default/entry-default-signed.hap"
   fi
 }

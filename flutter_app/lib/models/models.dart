@@ -11,6 +11,13 @@ String uid([String prefix = '']) {
 /// copyWith 用的哨兵，用于区分「没传这个参数」和「显式传 null」。
 const Object kUnset = Object();
 
+int? checkedRating(int? rating) {
+  if (rating != null && (rating < 1 || rating > 10)) {
+    throw RangeError.range(rating, 1, 10, 'rating');
+  }
+  return rating;
+}
+
 DateTime _parseDate(dynamic v) {
   if (v is! String) return DateTime.now();
   return DateTime.tryParse(v)?.toLocal() ?? DateTime.now();
@@ -78,6 +85,8 @@ class ReadingRound {
     required this.startedAt,
     this.finishedAt,
     this.note,
+    this.pages,
+    this.minutes,
     this.logs = const <ReadingLog>[],
   });
 
@@ -92,6 +101,10 @@ class ReadingRound {
   final DateTime? finishedAt;
   final String? note;
 
+  /// 历史轮次累计值；未填写时沿用已有明细汇总。
+  final int? pages;
+  final int? minutes;
+
   final List<ReadingLog> logs;
 
   bool get isActive => finishedAt == null;
@@ -102,6 +115,8 @@ class ReadingRound {
     DateTime? startedAt,
     Object? finishedAt = kUnset,
     Object? note = kUnset,
+    Object? pages = kUnset,
+    Object? minutes = kUnset,
     List<ReadingLog>? logs,
   }) =>
       ReadingRound(
@@ -112,6 +127,8 @@ class ReadingRound {
             ? this.finishedAt
             : finishedAt as DateTime?,
         note: identical(note, kUnset) ? this.note : note as String?,
+        pages: identical(pages, kUnset) ? this.pages : pages as int?,
+        minutes: identical(minutes, kUnset) ? this.minutes : minutes as int?,
         logs: logs ?? this.logs,
       );
 
@@ -121,6 +138,8 @@ class ReadingRound {
         'startedAt': isoOf(startedAt),
         if (finishedAt != null) 'finishedAt': isoOf(finishedAt!),
         if (note != null) 'note': note,
+        if (pages != null) 'pages': pages,
+        if (minutes != null) 'minutes': minutes,
         'logs': logs.map((l) => l.toJson()).toList(),
       };
 
@@ -131,6 +150,8 @@ class ReadingRound {
         finishedAt:
             j['finishedAt'] == null ? null : _parseDate(j['finishedAt']),
         note: j['note'] as String?,
+        pages: (j['pages'] as num?)?.toInt(),
+        minutes: (j['minutes'] as num?)?.toInt(),
         logs: ((j['logs'] as List<dynamic>?) ?? const [])
             .map((e) => ReadingLog.fromJson((e as Map).cast<String, dynamic>()))
             .toList(),
@@ -147,6 +168,7 @@ class Book {
     this.cover = '📖',
     this.accent = 0xFFB4552D,
     this.note,
+    this.rating,
     required this.createdAt,
     required this.updatedAt,
     this.rounds = const <ReadingRound>[],
@@ -168,6 +190,9 @@ class Book {
   /// 主题色（ARGB）
   final int accent;
 
+  /// 全书评分，1～10 分；null 表示未评分。
+  final int? rating;
+
   final String? note;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -181,6 +206,7 @@ class Book {
     Object? totalPages = kUnset,
     String? cover,
     int? accent,
+    Object? rating = kUnset,
     Object? note = kUnset,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -196,6 +222,7 @@ class Book {
             : totalPages as int?,
         cover: cover ?? this.cover,
         accent: accent ?? this.accent,
+        rating: identical(rating, kUnset) ? this.rating : rating as int?,
         note: identical(note, kUnset) ? this.note : note as String?,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
@@ -210,6 +237,7 @@ class Book {
         if (totalPages != null) 'totalPages': totalPages,
         'cover': cover,
         'accent': accent,
+        if (rating != null) 'rating': rating,
         if (note != null) 'note': note,
         'createdAt': isoOf(createdAt),
         'updatedAt': isoOf(updatedAt),
@@ -224,6 +252,7 @@ class Book {
         totalPages: (j['totalPages'] as num?)?.toInt(),
         cover: (j['cover'] as String?) ?? '📖',
         accent: (j['accent'] as num?)?.toInt() ?? 0xFFB4552D,
+        rating: (j['rating'] as num?)?.toInt(),
         note: j['note'] as String?,
         createdAt: _parseDate(j['createdAt']),
         updatedAt: _parseDate(j['updatedAt']),
@@ -254,7 +283,7 @@ class WatchRecord {
   /// 观看时间
   final DateTime at;
 
-  /// 一星到五星
+  /// 1～10 分；旧五星记录读取时按比例转换。
   final int? rating;
 
   final String? note;
@@ -263,13 +292,16 @@ class WatchRecord {
         'id': id,
         'at': isoOf(at),
         if (rating != null) 'rating': rating,
+        if (rating != null) 'ratingScale': 10,
         if (note != null) 'note': note,
       };
 
   factory WatchRecord.fromJson(Map<String, dynamic> j) => WatchRecord(
         id: (j['id'] ?? uid('wt_')) as String,
         at: _parseDate(j['at']),
-        rating: (j['rating'] as num?)?.toInt(),
+        rating: j['rating'] == null
+            ? null
+            : (j['rating'] as num).toInt() * (j['ratingScale'] == 10 ? 1 : 2),
         note: j['note'] as String?,
       );
 }
@@ -342,4 +374,4 @@ class Movie {
       );
 }
 
-enum MovieStatus { want, watched }
+enum MovieStatus { want, watched, rewatched }

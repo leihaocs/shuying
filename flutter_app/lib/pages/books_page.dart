@@ -9,7 +9,6 @@ import '../widgets/bits.dart';
 import '../widgets/book_tile.dart';
 import 'book_detail_page.dart';
 import 'home_shell.dart';
-import 'settings_page.dart';
 
 class BooksPage extends StatefulWidget {
   const BooksPage({super.key});
@@ -66,35 +65,13 @@ class _BooksPageState extends State<BooksPage> {
             subtitle: all.isEmpty
                 ? '还没有书，点右下角加一本'
                 : '共 ${all.length} 本 · ${all.where((b) => bl.activeRound(b) != null).length} 本在读',
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                RoundIconButton(
-                  icon: store.themeMode == ThemeMode.dark
-                      ? Icons.light_mode_rounded
-                      : Icons.dark_mode_rounded,
-                  onPressed: store.toggleTheme,
-                  tooltip: '切换主题',
-                ),
-                RoundIconButton(
-                  icon: Icons.settings_outlined,
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const SettingsPage(),
-                    ),
-                  ),
-                  tooltip: '设置 / 关于',
-                ),
-              ],
-            ),
           ),
           SegmentedBar(
             index: _filter,
             onChanged: (i) => setState(() => _filter = i),
             items: [
               SegItem(_labels[0], all.length),
-              for (var i = 1; i <= 4; i++)
-                SegItem(_labels[i], counts[i] ?? 0),
+              for (var i = 1; i <= 4; i++) SegItem(_labels[i], counts[i] ?? 0),
             ],
           ),
           Expanded(
@@ -106,7 +83,7 @@ class _BooksPageState extends State<BooksPage> {
                         icon: all.isEmpty ? '📚' : '🔍',
                         title: all.isEmpty ? '书架还是空的' : '这个分类下还没有书',
                         desc: all.isEmpty
-                            ? '点右下角的 + 添加第一本书\n书名和作者必填，其余可以以后再补'
+                            ? '点右下角的 + 添加第一本书\n只需填写书名，其余可以以后再补'
                             : '换个分类看看，或者添加一本新书',
                       ),
                     ],
