@@ -63,21 +63,24 @@ String statusLabel(Book book) {
     case BookStatus.reading:
       return '在读';
     case BookStatus.rereading:
-      return '再次阅读';
+      return '第${activeRound(book)!.index}次阅读';
     case BookStatus.finished:
       return '已读${book.rounds.length}次';
   }
 }
 
 int roundPages(ReadingRound round) =>
-    (!round.isActive ? round.pages : null) ??
-    round.logs.fold(0, (sum, l) => sum + (l.pages ?? 0));
+    round.pages ?? round.logs.fold(0, (sum, l) => sum + (l.pages ?? 0));
 
 int roundMinutes(ReadingRound round) =>
-    (!round.isActive ? round.minutes : null) ??
-    round.logs.fold(0, (sum, l) => sum + (l.minutes ?? 0));
+    round.minutes ?? round.logs.fold(0, (sum, l) => sum + (l.minutes ?? 0));
 
 int roundLogCount(ReadingRound round) => round.logs.length;
+
+/// 没有逐日分配信息的累计校正，统计到本轮结束或最近一次记录的日期。
+DateTime roundTotalsDate(ReadingRound round) =>
+    round.finishedAt ??
+    (round.logs.isEmpty ? round.startedAt : sortedLogs(round).first.at);
 
 /// 兼容旧轮次中保存在明细里的感想；显式保存空文本表示用户已清空。
 String roundReflection(ReadingRound round) =>

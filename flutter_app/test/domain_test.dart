@@ -46,7 +46,7 @@ void main() {
         _round(index: 2),
       ]);
       expect(bookStatus(b), BookStatus.rereading);
-      expect(statusLabel(b), '再次阅读');
+      expect(statusLabel(b), '第2次阅读');
     });
 
     test('全部完成 -> 已读 N 次', () {

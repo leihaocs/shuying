@@ -101,7 +101,7 @@ class ReadingRound {
   final DateTime? finishedAt;
   final String? note;
 
-  /// 历史轮次累计值；未填写时沿用已有明细汇总。
+  /// 本轮累计校正值（不是单次阅读量）；未填写时按已有明细汇总。
   final int? pages;
   final int? minutes;
 

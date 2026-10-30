@@ -461,6 +461,9 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
   void _saveLog(String bookId, String roundId, LogInput input,
           {String? logId}) =>
       _patchBook(bookId, (book) {
+        if ((input.pages ?? 0) < 0 || (input.minutes ?? 0) < 0) {
+          throw ArgumentError('单次页数和时长不能为负数');
+        }
         final rounds = book.rounds.map((round) {
           if (round.id != roundId) return round;
           final old = round.logs.where((log) => log.id == logId).toList();
@@ -493,14 +496,16 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
                 round.finishedAt != null && input.at.isAfter(round.finishedAt!)
                     ? input.at
                     : round.finishedAt,
-            pages: !round.isActive && round.pages != null
-                ? (round.pages! - (old.single.pages ?? 0) + (input.pages ?? 0))
+            pages: round.pages != null
+                ? (round.pages! -
+                        (old.isEmpty ? 0 : (old.single.pages ?? 0)) +
+                        (input.pages ?? 0))
                     .clamp(0, double.infinity)
                     .toInt()
                 : round.pages,
-            minutes: !round.isActive && round.minutes != null
+            minutes: round.minutes != null
                 ? (round.minutes! -
-                        (old.single.minutes ?? 0) +
+                        (old.isEmpty ? 0 : (old.single.minutes ?? 0)) +
                         (input.minutes ?? 0))
                     .clamp(0, double.infinity)
                     .toInt()
@@ -534,6 +539,13 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
           Object? pages = kUnset,
           Object? minutes = kUnset}) =>
       _patchBook(bookId, (book) {
+        for (final value in [pages, minutes]) {
+          if (!identical(value, kUnset) &&
+              value != null &&
+              (value is! int || value < 0)) {
+            throw ArgumentError('本轮累计页数和时长必须是非负整数');
+          }
+        }
         final rounds = book.rounds.map((round) {
           if (round.id != roundId) return round;
           final end = round.isActive ? null : (finishedAt ?? round.finishedAt);
@@ -548,8 +560,9 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
               startedAt: startedAt,
               finishedAt: end,
               note: note.trim(),
-              pages: round.isActive ? kUnset : pages,
-              minutes: round.isActive ? kUnset : minutes);
+              // 校正累计值不改动单次明细，因而也不会使阅读进度倒退。
+              pages: pages,
+              minutes: minutes);
         }).toList();
         // 起止时间改了，轮次顺序和编号重排。
         return book.copyWith(rounds: chronologicalRounds(rounds));
@@ -563,12 +576,12 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
             if (removed.isEmpty) return r;
             return r.copyWith(
               logs: r.logs.where((l) => l.id != logId).toList(),
-              pages: !r.isActive && r.pages != null
+              pages: r.pages != null
                   ? (r.pages! - (removed.single.pages ?? 0))
                       .clamp(0, double.infinity)
                       .toInt()
                   : kUnset,
-              minutes: !r.isActive && r.minutes != null
+              minutes: r.minutes != null
                   ? (r.minutes! - (removed.single.minutes ?? 0))
                       .clamp(0, double.infinity)
                       .toInt()

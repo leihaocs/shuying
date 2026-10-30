@@ -7,7 +7,7 @@ import re
 import zipfile
 
 
-def check_hap(package, version_name='1.0.0', version_code=6):
+def check_hap(package, version_name='1.0.0', version_code=7):
     with zipfile.ZipFile(package) as archive:
         names = archive.namelist()
         if 'module.json' not in names:
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('package')
     parser.add_argument('version_name', nargs='?', default='1.0.0')
-    parser.add_argument('version_code', nargs='?', type=int, default=6)
+    parser.add_argument('version_code', nargs='?', type=int, default=7)
     args = parser.parse_args()
     try:
         result = check_hap(args.package, args.version_name, args.version_code)
