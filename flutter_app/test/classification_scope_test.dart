@@ -3,17 +3,147 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shuying/domain/books.dart' as bl;
 import 'package:shuying/models/models.dart';
 import 'package:shuying/pages/home_shell.dart';
+import 'package:shuying/pages/book_detail_page.dart';
 import 'package:shuying/pages/stats_page.dart';
 import 'package:shuying/pages/usage_guide_page.dart';
 import 'package:shuying/services/backup_codec.dart';
 import 'package:shuying/services/pro_store.dart';
 import 'package:shuying/store/app_store.dart';
 import 'package:shuying/widgets/bits.dart';
+import 'package:shuying/widgets/book_tile.dart';
 import 'package:shuying/widgets/sheets.dart';
 import 'review_regression_test.dart' show harness;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets('在读与再次阅读卡片只显示本轮优先数据，重读标明次数', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(360, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final store = AppStore();
+    final pro = ProStore();
+    addTearDown(() {
+      store.dispose();
+      pro.dispose();
+    });
+    final at = DateTime(2026, 10, 1);
+    for (final index in [1, 2]) {
+      Future<void> show(List<ReadingLog> logs) async {
+        final book = Book(
+          id: 'reading',
+          title: '阅读中的书',
+          totalPages: 100,
+          createdAt: at,
+          updatedAt: at,
+          rounds: [
+            if (index > 1)
+              ReadingRound(
+                  id: 'history',
+                  index: 1,
+                  startedAt: DateTime(2025),
+                  finishedAt: DateTime(2025, 2),
+                  pages: 900,
+                  minutes: 900),
+            ReadingRound(
+                id: 'current', index: index, startedAt: at, logs: logs),
+          ],
+        );
+        await tester.pumpWidget(harness(
+            Scaffold(body: BookTile(book: book, onTap: () {})), store, pro,
+            scale: 1.4));
+        await tester.pumpAndSettle();
+        expect(find.text(index == 1 ? '在读' : '第2次阅读'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+
+      await show([
+        ReadingLog(
+            id: 'time-only', at: at.add(const Duration(days: 3)), minutes: 15),
+        ReadingLog(
+            id: 'old', at: at.add(const Duration(days: 1)), progress: 20),
+        ReadingLog(
+            id: 'new',
+            at: at.add(const Duration(days: 2)),
+            progress: 45,
+            pages: 40,
+            minutes: 30),
+      ]);
+      expect(find.text('阅读进度 45%'), findsOneWidget);
+      expect(find.textContaining('已阅读'), findsNothing);
+
+      // 有总页数也不把未填写的百分比当成已填写进度；不混入历史轮次。
+      await show([
+        ReadingLog(id: 'p1', at: at, pages: 12, minutes: 30),
+        ReadingLog(
+            id: 'p2',
+            at: at.add(const Duration(days: 1)),
+            pages: 8,
+            minutes: 15),
+      ]);
+      expect(find.text('已阅读 20 页'), findsOneWidget);
+      expect(find.textContaining('阅读进度'), findsNothing);
+      expect(find.byType(ProgressBar), findsNothing);
+      expect(find.textContaining('45分钟'), findsNothing);
+
+      await show([
+        ReadingLog(id: 'm1', at: at, minutes: 10),
+        ReadingLog(id: 'm2', at: at.add(const Duration(days: 1)), minutes: 20),
+      ]);
+      expect(find.text('已阅读 30分钟'), findsOneWidget);
+      await show([]);
+      expect(find.text('已阅读 0分钟'), findsOneWidget);
+      await show([
+        ReadingLog(id: 'zero', at: at, progress: 0, pages: 10, minutes: 10)
+      ]);
+      expect(find.text('阅读进度 0%'), findsOneWidget);
+      expect(find.textContaining('已阅读'), findsNothing);
+    }
+  });
+
+  testWidgets('详情显示三项本轮累计，直接修正总数不改动单次或进度', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final store = AppStore();
+    final pro = ProStore();
+    addTearDown(() {
+      store.dispose();
+      pro.dispose();
+    });
+    final book = store.addBook(BookInput(title: '累计与单次', totalPages: 200),
+        initialStatus: BookStatus.reading, readPages: 50, readMinutes: 70);
+    final round = book.rounds.single;
+    store.addLog(
+        book.id,
+        round.id,
+        LogInput(
+            at: DateTime.now().add(const Duration(minutes: 1)), progress: 40));
+    final originalLogs = store.books.single.rounds.single.logs;
+    await tester
+        .pumpWidget(harness(BookDetailPage(bookId: book.id), store, pro));
+    await tester.pumpAndSettle();
+    expect(find.text('本轮累计进度'), findsOneWidget);
+    expect(find.text('本轮累计页数'), findsOneWidget);
+    expect(find.text('本轮累计时长'), findsOneWidget);
+    expect(find.text('40%'), findsOneWidget);
+    await tester.ensureVisible(find.byKey(const Key('edit-reading-totals')));
+    await tester.tap(find.byKey(const Key('edit-reading-totals')));
+    await tester.pumpAndSettle();
+    Finder field(String key) => find.descendant(
+        of: find.byKey(Key(key)), matching: find.byType(TextField));
+    await tester.ensureVisible(field('round-total-pages'));
+    await tester.enterText(field('round-total-pages'), '15');
+    await tester.enterText(field('round-total-minutes'), '20');
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('保存修改'));
+    await tester.pumpAndSettle();
+    final updated = store.books.single.rounds.single;
+    expect(bl.roundPages(updated), 15);
+    expect(bl.roundMinutes(updated), 20);
+    expect(updated.logs, originalLogs);
+    expect(find.text('40%'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   test('新书三种初始状态一次保存，四个分类互斥，非法初始进度不新增书籍', () {
     final store = AppStore();

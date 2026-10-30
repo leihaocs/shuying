@@ -140,8 +140,12 @@ class BookDetailPage extends StatelessWidget {
                             book.totalPages == null
                                 ? '—'
                                 : '${book.totalPages} 页'),
-                        _InfoRow('累计阅读',
-                            '${summary.totalPages} 页 · ${formatDuration(summary.totalMinutes)}'),
+                        _InfoRow('全书累计阅读页数', '${summary.totalPages} 页'),
+                        _InfoRow(
+                            '全书累计阅读时长',
+                            summary.totalMinutes > 0
+                                ? formatDuration(summary.totalMinutes)
+                                : '0分钟'),
                         _InfoRow('记录条数', '${summary.totalLogs} 条'),
                         _InfoRow('加入时间', formatDate(book.createdAt)),
                         if (book.note != null)
@@ -254,7 +258,11 @@ class _ProgressCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       child: Row(
         children: [
-          ProgressRing(value: percent / 100, size: 104, stroke: 10),
+          Column(children: [
+            ProgressRing(value: percent / 100, size: 104, stroke: 10),
+            const SizedBox(height: 6),
+            Text('本轮累计进度', style: TextStyle(fontSize: 12, color: c.text3)),
+          ]),
           const SizedBox(width: 18),
           Expanded(
             child: Column(
@@ -278,17 +286,25 @@ class _ProgressCard extends StatelessWidget {
                   cells: [
                     StatCell(
                       value: '${bl.roundPages(round)}',
-                      label: '已读页数',
+                      label: '本轮累计页数',
                     ),
                     StatCell(
-                      value: formatDuration(bl.roundMinutes(round)),
-                      label: '本轮时长',
+                      value: bl.roundMinutes(round) > 0
+                          ? formatDuration(bl.roundMinutes(round))
+                          : '0分钟',
+                      label: '本轮累计时长',
                     ),
                     StatCell(
                       value: '${bl.roundLogCount(round)}',
                       label: '记录条数',
                     ),
                   ],
+                ),
+                TextButton(
+                  key: const Key('edit-reading-totals'),
+                  onPressed: () =>
+                      showPastRoundSheet(context, book: book, round: round),
+                  child: const Text('修正本轮累计数据'),
                 ),
               ],
             ),
@@ -517,9 +533,10 @@ class _LogTimeline extends StatelessWidget {
                                     runSpacing: 2,
                                     children: [
                                       if (l.pages != null)
-                                        _How('📄 ${l.pages} 页'),
+                                        _How('📄 本次 ${l.pages} 页'),
                                       if (l.minutes != null)
-                                        _How('⏱ ${formatDuration(l.minutes)}'),
+                                        _How(
+                                            '⏱ 本次 ${formatDuration(l.minutes)}'),
                                       // 进度只属于正在读的这一轮。
                                       if (l.progress != null && round.isActive)
                                         _How('📈 进度 ${l.progress}%'),
@@ -733,14 +750,13 @@ class _RoundCardState extends State<_RoundCard> {
               ),
             ),
           ],
-          if (r.logs.isNotEmpty ||
-              (done && (r.pages != null || r.minutes != null))) ...[
+          if (r.logs.isNotEmpty || r.pages != null || r.minutes != null) ...[
             const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
                   child: Text(
-                    '${bl.roundPages(r)} 页 · ${formatDuration(bl.roundMinutes(r))} · ${bl.roundLogCount(r)} 条记录',
+                    '本轮累计 ${bl.roundPages(r)} 页 · ${formatDuration(bl.roundMinutes(r))} · ${bl.roundLogCount(r)} 条记录',
                     style: TextStyle(fontSize: 12.5, color: c.text2),
                   ),
                 ),
@@ -753,7 +769,7 @@ class _RoundCardState extends State<_RoundCard> {
           ],
           const SizedBox(height: 8),
           AppButton(
-            label: done ? '修改阅读记录' : '修改阅读时间',
+            label: done ? '修改阅读记录' : '修改本轮阅读数据',
             kind: BtnKind.soft,
             expand: true,
             onPressed: () =>

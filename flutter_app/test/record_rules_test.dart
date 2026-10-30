@@ -166,6 +166,78 @@ void main() {
           throwsArgumentError);
     });
 
+    test('本轮累计修正与单次增删改分开，进度不倒退，备份和年度汇总不重复', () {
+      final book = newBook();
+      final rid = book.rounds.single.id;
+      store.addLog(
+          book.id,
+          rid,
+          LogInput(
+              at: DateTime(2026, 1, 1), pages: 20, minutes: 30, progress: 10));
+      store.addLog(
+          book.id,
+          rid,
+          LogInput(
+              at: DateTime(2026, 1, 2), pages: 30, minutes: 40, progress: 25));
+      final original = store.books.single.rounds.single;
+      store.updateRound(book.id, rid,
+          startedAt: original.startedAt, note: '', pages: 15, minutes: 20);
+      var round = store.books.single.rounds.single;
+      expect(books.roundPages(round), 15);
+      expect(books.roundMinutes(round), 20);
+      expect(round.logs, original.logs); // 累计修正不伪造或覆盖单次记录。
+      expect(books.roundProgress(store.books.single, round), 25);
+      expect(
+          () => store.addLog(
+              book.id, rid, LogInput(at: DateTime(2026, 1, 3), progress: 24)),
+          throwsArgumentError);
+
+      store.addLog(
+          book.id,
+          rid,
+          LogInput(
+              at: DateTime(2026, 1, 3), pages: 5, minutes: 10, progress: 30));
+      round = store.books.single.rounds.single;
+      expect(books.roundPages(round), 20); // 15 + 本次5，不能加成65。
+      expect(books.roundMinutes(round), 30);
+      final latest = books.sortedLogs(round).first;
+      store.updateLog(book.id, rid, latest.id,
+          LogInput(at: latest.at, pages: 8, minutes: 15, progress: 30));
+      round = store.books.single.rounds.single;
+      expect(books.roundPages(round), 23); // 修正单次只加差额3。
+      expect(books.roundMinutes(round), 35);
+      store.removeLog(book.id, latest.id);
+      round = store.books.single.rounds.single;
+      expect(books.roundPages(round), 15);
+      expect(books.roundMinutes(round), 20);
+      expect(
+          () => store.updateRound(book.id, rid,
+              startedAt: round.startedAt, note: '', pages: -1),
+          throwsArgumentError);
+      store.updateRound(book.id, rid,
+          startedAt: round.startedAt, note: '', pages: 120, minutes: 160);
+      final restored = decodeBackup(store.exportJson());
+      final restoredRound = restored.books.single.rounds.single;
+      expect(books.roundProgress(restored.books.single, restoredRound), 25);
+      expect(restoredRound.logs.map((l) => l.pages), [20, 30]);
+      final review = YearReview(restored.books, [], 2026);
+      expect(review.pages, 120);
+      expect(review.minutes, 160);
+      expect(review.monthlyMinutes[0], 160);
+      expect(review.readTimes, 0);
+      store.updateRound(book.id, rid,
+          startedAt: round.startedAt, note: '', pages: 0, minutes: 0);
+      expect(books.bookSummary(store.books.single).totalPages, 0);
+      expect(
+          books.roundProgress(
+              store.books.single, store.books.single.rounds.single),
+          25);
+      store.updateRound(book.id, rid,
+          startedAt: round.startedAt, note: '', pages: null, minutes: null);
+      expect(books.bookSummary(store.books.single).totalPages, 50);
+      expect(books.bookSummary(store.books.single).totalMinutes, 70);
+    });
+
     test('历史累计页数时长修改、备份及年度统计一致，不制造新明细', () {
       final book = store.addBook(BookInput(title: '历史汇总'));
       store.addPastRound(

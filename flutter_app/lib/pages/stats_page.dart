@@ -108,11 +108,11 @@ class _StatsPageState extends State<StatsPage> {
       for (final r in b.rounds) {
         minutes += bl.roundMinutes(r);
         pages += bl.roundPages(r);
-        final aggregate = !r.isActive && (r.pages != null || r.minutes != null);
+        final aggregate = r.pages != null || r.minutes != null;
         if (aggregate || (!r.isActive && r.logs.isEmpty)) {
-          // 历史累计数只投影到统计，不制造新的阅读明细。
+          // 本轮累计校正只投影到统计，不制造或修改单次阅读明细。
           allLogs.add(_ReadingLogRow(
-              at: r.finishedAt!,
+              at: bl.roundTotalsDate(r),
               pages: r.pages,
               minutes: r.minutes,
               bookId: b.id,
@@ -120,9 +120,8 @@ class _StatsPageState extends State<StatsPage> {
               cover: b.cover));
         }
         for (final l in r.logs) {
-          final logPages = !r.isActive && r.pages != null ? null : l.pages;
-          final logMinutes =
-              !r.isActive && r.minutes != null ? null : l.minutes;
+          final logPages = r.pages != null ? null : l.pages;
+          final logMinutes = r.minutes != null ? null : l.minutes;
           if (aggregate && logPages == null && logMinutes == null) continue;
           allLogs.add(_ReadingLogRow(
             at: l.at,

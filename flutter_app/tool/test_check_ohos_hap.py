@@ -7,7 +7,7 @@ import zipfile
 from check_ohos_hap import check_hap
 
 
-def package(debug=False, jit=False, engine=b'1' * 32, version_code=6):
+def package(debug=False, jit=False, engine=b'1' * 32, version_code=7):
     data = io.BytesIO()
     with zipfile.ZipFile(data, 'w') as archive:
         archive.writestr('module.json', json.dumps({
@@ -28,7 +28,8 @@ if __name__ == '__main__':
     for blob, reason in [(package(debug=True), 'debug/JIT'),
                          (package(jit=True), 'debug/JIT'),
                          (package(engine=b'2' * 32), '快照'),
-                         (package(version_code=7), '版本')]:
+                         (package(version_code=6), '版本'),
+                         (package(version_code=8), '版本')]:
         try:
             check_hap(blob)
         except ValueError as error:
@@ -39,5 +40,5 @@ if __name__ == '__main__':
     with zipfile.ZipFile(app, 'w') as archive:
         archive.writestr('entry.hap', package().getvalue())
     app.seek(0)
-    assert check_hap(app)[0]['version'] == '1.0.0(6)'
+    assert check_hap(app)[0]['version'] == '1.0.0(7)'
     print('通过：release HAP/APP 放行，debug/JIT、错快照与误升号拒绝。')

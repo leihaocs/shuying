@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # 由 release.sh / ios_ipa.sh 在设置 APP_DIR 后 source。
 # 正式基线只接受用户明确指定，不根据修复、编译或审核状态自动改变。
-SHUYING_OFFICIAL_BUILD_NUMBER=5
+SHUYING_OFFICIAL_BUILD_NUMBER=6
 SHUYING_CANDIDATE_BUILD_NUMBER=$((SHUYING_OFFICIAL_BUILD_NUMBER + 1))
 # 用户于 2026-10-29 授权仅 iOS 调整营销版本；其他平台继续读取 pubspec。
 SHUYING_IOS_VERSION_NAME=1.0.1
-# 用户于 2026-10-30 明确指定 iOS 构建 7；重编固定 7，不影响其他平台基线。
-SHUYING_IOS_BUILD_NUMBER=7
+# 用户于 2026-10-30 将全部正式号统一为 6；各端候选固定为正式号 +1。
+SHUYING_IOS_BUILD_NUMBER="$SHUYING_CANDIDATE_BUILD_NUMBER"
 
 APP_VER_RAW="$(sed -n 's/^version:[[:space:]]*//p' "$APP_DIR/pubspec.yaml" | head -1 | tr -d '\r')"
 APP_VER_NAME="${APP_VER_RAW%%+*}"

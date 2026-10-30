@@ -16,6 +16,8 @@ class BookTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = AppColors.of(context);
     final active = bl.activeRound(book);
+    final hasProgress =
+        active?.logs.any((log) => log.progress != null) ?? false;
     final pct = bl.roundProgress(book, active);
     final summary = bl.bookSummary(book);
 
@@ -60,7 +62,7 @@ class BookTile extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontSize: 12.5, color: c.text2),
                     ),
-                    if (active != null) ...[
+                    if (hasProgress) ...[
                       const SizedBox(height: 8),
                       ProgressBar(value: pct / 100),
                     ],
@@ -75,7 +77,9 @@ class BookTile extends StatelessWidget {
                           Text('${book.rating}/10',
                               style: TextStyle(fontSize: 12, color: c.text2)),
                         Text(
-                          _meta(summary),
+                          active == null
+                              ? _meta(summary)
+                              : _readingMeta(active, hasProgress ? pct : null),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: TextStyle(fontSize: 12, color: c.text3),
@@ -94,6 +98,14 @@ class BookTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _readingMeta(ReadingRound round, int? progress) {
+    if (progress != null) return '阅读进度 $progress%';
+    final pages = bl.roundPages(round);
+    if (pages > 0) return '已阅读 $pages 页';
+    final minutes = bl.roundMinutes(round);
+    return '已阅读 ${minutes > 0 ? formatDuration(minutes) : '0分钟'}';
   }
 
   String _meta(bl.BookSummary s) {

@@ -1,4 +1,5 @@
 import '../models/models.dart';
+import 'books.dart' show roundTotalsDate;
 
 class YearReview {
   YearReview(List<Book> books, List<Movie> movies, int year) {
@@ -6,16 +7,16 @@ class YearReview {
     for (final book in books) {
       for (final round in book.rounds) {
         if (round.finishedAt?.year == year) readTimes++;
-        final pageTotal = !round.isActive ? round.pages : null;
-        final minuteTotal = !round.isActive ? round.minutes : null;
-        if (round.finishedAt?.year == year) {
+        final pageTotal = round.pages;
+        final minuteTotal = round.minutes;
+        final totalsAt = roundTotalsDate(round);
+        if (totalsAt.year == year) {
           pages += pageTotal ?? 0;
           minutes += minuteTotal ?? 0;
-          monthlyMinutes[round.finishedAt!.month - 1] += minuteTotal ?? 0;
+          monthlyMinutes[totalsAt.month - 1] += minuteTotal ?? 0;
           if (round.logs.isEmpty &&
               ((pageTotal ?? 0) > 0 || (minuteTotal ?? 0) > 0)) {
-            activeDays
-                .add('${round.finishedAt!.month}-${round.finishedAt!.day}');
+            activeDays.add('${totalsAt.month}-${totalsAt.day}');
           }
         }
         for (final log in round.logs.where((l) => l.at.year == year)) {

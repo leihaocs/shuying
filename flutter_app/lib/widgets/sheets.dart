@@ -741,7 +741,7 @@ Future<bool?> showLogSheet(
     context,
     title: log == null ? '记录本次阅读' : '修改阅读记录',
     subtitle: round.isActive
-        ? '读了 ${roundPages(round)} 页 · ${formatDuration(roundMinutes(round))}'
+        ? '本轮累计 ${roundPages(round)} 页 · ${formatDuration(roundMinutes(round))}；下方填写单次阅读量'
         : '已读完的轮次：可改日期、页数与时长，进度不再调整',
     child: _LogForm(book: book, round: round, existing: log),
   );
@@ -871,7 +871,7 @@ class _LogFormState extends State<_LogForm> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Field(
-                      label: '或 读了多久',
+                      label: '本次阅读时长',
                       optional: true,
                       child: NumberField(
                         controller: _minutes,
@@ -885,10 +885,10 @@ class _LogFormState extends State<_LogForm> {
               // 进度只属于正在读的这一轮；已读完的轮次不再改进度。
               if (widget.round.isActive)
                 Field(
-                  label: '估计总进度',
+                  label: '本次结束后的累计进度',
                   hint: (total ?? 0) <= 0
                       ? '没填总页数时，只能手动估一个百分比'
-                      : '也可以不填，系统会按已读 $total 页来估算',
+                      : '可不填，系统按本次页数和全书 $total 页估算；进度不能小于上一笔',
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -960,7 +960,7 @@ Future<bool?> showPastRoundSheet(BuildContext context,
   return _openSheet<bool>(context,
       title: round == null ? '补记往期阅读' : '修改阅读记录',
       subtitle: round?.isActive == true
-          ? '修改本轮开始时间和感想，阅读明细可单独编辑'
+          ? '修正本轮累计页数、时长，不改动单次记录和进度'
           : '修改起止时间、页数、时长和感想，历史进度保持不变',
       child: _PastRoundForm(book: book, existing: round));
 }
@@ -1023,22 +1023,38 @@ class _PastRoundFormState extends State<_PastRoundForm> {
       return;
     }
     final store = context.read<AppStore>();
-    if (widget.existing == null) {
-      store.addPastRound(
-          widget.book.id,
-          PastRoundInput(
-              startedAt: start,
-              finishedAt: finish,
-              note: _note.text,
-              pages: int.tryParse(_pages.text),
-              minutes: int.tryParse(_minutes.text)));
-    } else {
-      store.updateRound(widget.book.id, widget.existing!.id,
-          startedAt: start,
-          finishedAt: _active ? null : finish,
-          note: _note.text,
-          pages: _active ? kUnset : int.tryParse(_pages.text),
-          minutes: _active ? kUnset : int.tryParse(_minutes.text));
+    final pages = _pages.text.trim().isEmpty ? null : int.tryParse(_pages.text);
+    final minutes =
+        _minutes.text.trim().isEmpty ? null : int.tryParse(_minutes.text);
+    if ((_pages.text.trim().isNotEmpty && pages == null) ||
+        (_minutes.text.trim().isNotEmpty && minutes == null) ||
+        (pages ?? 0) < 0 ||
+        (minutes ?? 0) < 0) {
+      setState(() => _rangeErr = '累计页数和时长请填写非负整数');
+      return;
+    }
+    try {
+      if (widget.existing == null) {
+        store.addPastRound(
+            widget.book.id,
+            PastRoundInput(
+                startedAt: start,
+                finishedAt: finish,
+                note: _note.text,
+                pages: pages,
+                minutes: minutes));
+      } else {
+        store.updateRound(widget.book.id, widget.existing!.id,
+            startedAt: start,
+            finishedAt: _active ? null : finish,
+            note: _note.text,
+            pages: pages == roundPages(widget.existing!) ? kUnset : pages,
+            minutes:
+                minutes == roundMinutes(widget.existing!) ? kUnset : minutes);
+      }
+    } on ArgumentError catch (error) {
+      setState(() => _rangeErr = '${error.message}');
+      return;
     }
     Navigator.of(context).pop(true);
   }
@@ -1072,22 +1088,29 @@ class _PastRoundFormState extends State<_PastRoundForm> {
         if (_rangeErr != null)
           Text(_rangeErr!,
               style: TextStyle(color: Theme.of(context).colorScheme.error)),
-        if (!_active)
-          Row(children: [
-            Expanded(
-                child: Field(
-                    label: '累计页数',
-                    optional: true,
-                    child: NumberField(
-                        controller: _pages, hintText: '未填写', suffix: '页'))),
-            const SizedBox(width: 10),
-            Expanded(
-                child: Field(
-                    label: '累计时长',
-                    optional: true,
-                    child: NumberField(
-                        controller: _minutes, hintText: '未填写', suffix: '分钟'))),
-          ]),
+        const Text('以下是本轮累计数据，不是单次阅读量。可纠正为更大或更小的数值；留空恢复按明细汇总，进度保持不变。'),
+        const SizedBox(height: 10),
+        Row(children: [
+          Expanded(
+              child: Field(
+                  label: '本轮累计页数',
+                  optional: true,
+                  child: NumberField(
+                      key: const Key('round-total-pages'),
+                      controller: _pages,
+                      hintText: '未填写',
+                      suffix: '页'))),
+          const SizedBox(width: 10),
+          Expanded(
+              child: Field(
+                  label: '本轮累计时长',
+                  optional: true,
+                  child: NumberField(
+                      key: const Key('round-total-minutes'),
+                      controller: _minutes,
+                      hintText: '未填写',
+                      suffix: '分钟'))),
+        ]),
         Field(
             label: '感想 / 心得',
             optional: true,
