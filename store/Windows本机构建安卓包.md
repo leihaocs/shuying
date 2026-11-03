@@ -138,7 +138,7 @@ C:\dev\出调试包.bat
 |---|---|---|---|
 | 1 | Adoptium JDK 下载只有几百 KB/s | 走 GitHub Release | 改清华镜像 `mirrors.tuna.tsinghua.edu.cn/Adoptium`（182 MB / 23 秒） |
 | 2 | `sdkmanager --licenses` 管道输入无效 | 它直连控制台，不读 stdin | 直连 `dl.google.com` 下载组件 zip 手动解压；再手写 `licenses\*` 哈希文件 |
-| 3 | `pub get` 失败 | `pubspec.yaml` 里 5 处 Mac 路径 `/Users/leihao/...` | 用 `pubspec_overrides.yaml` 改指 pub.dev，**不动** `pubspec.yaml` |
+| 3 | `pub get` 失败 | `pubspec.yaml` 里 5 处 Mac 路径 `<本机路径>/...` | 用 `pubspec_overrides.yaml` 改指 pub.dev，**不动** `pubspec.yaml` |
 | 4 | `Type 'UnmodifiableUint8ListView' not found` | Dart 3.13 后该类被移除，`win32` 4.x/5.x 未适配 | 覆盖 `win32: ^6.4.0` |
 | 5 | `path_provider_windows` 报参数个数不匹配 | 2.2.1 依赖 `win32 <6`，与上条冲突 | 覆盖 `path_provider_windows: 2.3.0`（该版已不依赖 win32） |
 | 6 | `SharedPreferencesPlugin.java:52: 找不到符号` | 插件用了 Flutter 已移除的 v1 embedding API | `shared_preferences` 整组升到 2.5.x（要求 Flutter 3.44 及以上；本机 3.47.5） |

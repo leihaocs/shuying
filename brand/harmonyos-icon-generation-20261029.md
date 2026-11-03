@@ -4,7 +4,7 @@
 
 - 原图：`brand/app_icon_1024_flat.png`。现有书本与胶片品牌图案；不再沿用低清的 114×114 桌面图标。
 - 模式：内置 imagegen 编辑，透明输出；最终选用第二次生成的前景。首轮未采用。
-- 原始选中输出：`/Users/leihao/.codex/generated_images/01a17d43-e7f9-7ae0-93ff-3eda1045198a/exec-f669e623-3278-4839-966a-6f3bc4d584b4.png`。
+- 原始选中输出：`<本机路径>/.codex/generated_images/01a17d43-e7f9-7ae0-93ff-3eda1045198a/exec-f669e623-3278-4839-966a-6f3bc4d584b4.png`。
 - 生产前景：`flutter_app/ohos/AppScope/resources/base/media/icon_foreground.png`。使用 macOS `sips` 规范化为 1024×1024，保留 alpha。
 - 生产背景：同目录 `icon_background.png`，1024×1024、不透明纯色 `#101026`，无圆角裁切。简单纯色背景由本地代码生成。
 - 配置：同目录 `layered_image.json`；`AppScope/app.json5` 和入口 Ability 的 `icon` 统一引用 `$media:layered_image`。启动窗口的独立图片配置保留。

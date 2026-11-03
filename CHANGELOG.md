@@ -123,7 +123,7 @@
 - 三端应用显示名统一为“书影温故”。
 - 替换默认 Flutter logo 为书影温故品牌图标（书本 + 胶片光影）。
 - 移除 HarmonyOS 未使用的 `ohos.permission.INTERNET` 权限。
-- 修复隐私政策文案与实际行为一致：当前版本不申请任何系统权限；联系邮箱改为 `leihaocs@gmail.com`。
+- 修复隐私政策文案与实际行为一致：当前版本不申请任何系统权限；联系邮箱改为 `<联系邮箱>`。
 - 新增 iOS `PrivacyInfo.xcprivacy` 并挂入 Runner 资源阶段，声明 `UserDefaults` / `FileTimestamp` / `DiskSpace` 用途，避免 ITMS-91053。
 - iOS 工程已写入 `DEVELOPMENT_TEAM = Y25KP5S862`（Personal Team）。
 - 新增 `tool/generate_screenshots.sh`：基于 iPhone 17 Pro Max 模拟器自动生成 6.9" / 6.5" / Android / 鸿蒙 9:16 截图。

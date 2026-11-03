@@ -12,7 +12,7 @@
 |---|---|
 | macOS / Xcode | Xcode **26.3**（Build 17C529） |
 | Flutter SDK | **3.47.5** stable（与 Windows 一致） |
-| Apple ID | `leihaocs@foxmail.com` |
+| Apple ID | `<你的AppleID>` |
 | Team ID | `6D7W6L5VH9` |
 | Bundle ID | `com.bookmovie.revisit.app` |
 | App Store Connect App ID | `6817832283` |

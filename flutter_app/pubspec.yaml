@@ -25,8 +25,9 @@ dependencies:
   # shared_preferences 锁到 2.2.2：2.2.2 兼容 Dart 2.19（OHOS 分支），
   # 而 2.2.3+ 需要 Dart 3.1+，主 Flutter（Dart 3.13）也兼容 2.2.2 API。
   shared_preferences: 2.2.2
+  # 鸿蒙端 ohos 实现的真实本机 path 在 pubspec_overrides.yaml（不入库）。
   shared_preferences_ohos:
-    path: /Users/leihao/flutter_packages_ohos/packages/shared_preferences/shared_preferences_ohos
+    path: /absolute/local/path/to/flutter_packages_ohos/packages/shared_preferences/shared_preferences_ohos
 
 dev_dependencies:
   flutter_test:
@@ -37,25 +38,28 @@ dev_dependencies:
 # 鸿蒙适配：Flutter 3.13+ 起官方 shared_preferences 已原生支持 ohos 平台，
 # 直接使用 pub.dev 版本即可，无需本地 fork overrides。
 
+# 各平台的真实本机 path 与版本锁定统一在 pubspec_overrides.yaml（已被 .gitignore
+# 忽略，不入库），避免把开发者本机路径提交到公开仓库。克隆后请自行创建该文件。
 dependency_overrides:
   # 鸿蒙 fork 的 shared_preferences_android 2.2.0 仍引用已移除的 v1 embedding Registrar，
   # 在 Flutter 3.13+ 上 compileRelease 会失败；我们已移除 registerWith 方法，
   # 并用本地 path override 让 Android 使用 patched 版本。
   shared_preferences_android:
-    path: /Users/leihao/flutter_packages_ohos/packages/shared_preferences/shared_preferences_android
+    path: /absolute/local/path/to/flutter_packages_ohos/packages/shared_preferences/shared_preferences_android
   # shared_preferences_platform_interface 锁到 2.3.1：2.3.1 兼容 Dart 2.19，
   # shared_preferences_ohos 2.2.0 需要 ^2.3.0；2.3.2+ 需要 Dart 3+。
   shared_preferences_platform_interface: 2.3.1
   # 其余各平台实现统一走鸿蒙 fork 的 2.3.x（约束 platform_interface ^2.3.0），
   # 避免 pub.dev 上的 2.4.x 要求 platform_interface ^2.4 与上面 2.3.1 冲突。
+  # 真实本机 path 见 pubspec_overrides.yaml。
   shared_preferences_foundation:
-    path: /Users/leihao/flutter_packages_ohos/packages/shared_preferences/shared_preferences_foundation
+    path: /absolute/local/path/to/flutter_packages_ohos/packages/shared_preferences/shared_preferences_foundation
   shared_preferences_linux:
-    path: /Users/leihao/flutter_packages_ohos/packages/shared_preferences/shared_preferences_linux
+    path: /absolute/local/path/to/flutter_packages_ohos/packages/shared_preferences/shared_preferences_linux
   shared_preferences_windows:
-    path: /Users/leihao/flutter_packages_ohos/packages/shared_preferences/shared_preferences_windows
+    path: /absolute/local/path/to/flutter_packages_ohos/packages/shared_preferences/shared_preferences_windows
   shared_preferences_web:
-    path: /Users/leihao/flutter_packages_ohos/packages/shared_preferences/shared_preferences_web
+    path: /absolute/local/path/to/flutter_packages_ohos/packages/shared_preferences/shared_preferences_web
   # win32 锁到 4.1.4：
   #   - 主 Flutter (Dart 3.13) 默认会拉到 5.x，但 5.x 用 Dart 3.0 `base class`
   #     与 ffi ^2.1.3，与 OHOS 分支 (Dart 2.19) 不兼容；

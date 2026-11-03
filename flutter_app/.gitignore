@@ -29,7 +29,7 @@ migrate_working_dir/
 .dart_tool/
 .flutter-plugins-dependencies
 # 插件路径清单：`flutter pub get` 生成，里面写的是各机器自己的 pub-cache 绝对路径
-# （Mac 是 /Users/leihao/...，本机是 C:\Users\...），入库必然来回冲突。
+# （Mac 是 <本机路径>/...，本机是 C:\Users\...），入库必然来回冲突。
 .flutter-plugins
 .pub-cache/
 .pub/
@@ -38,7 +38,7 @@ migrate_working_dir/
 
 # 机器本地依赖覆盖（各机器一份，绝不入库）。
 # Mac 把 shared_preferences 各平台实现指向了本机 fork 的绝对路径
-# /Users/leihao/flutter_packages_ohos/...，这台 Windows 上不存在 → pub get 直接失败。
+# <本机路径>/flutter_packages_ohos/...，这台 Windows 上不存在 → pub get 直接失败。
 # 本机用它重定向到 pub.dev 同版本，只为跑 analyze / test；Mac 上没有此文件，不受影响。
 /pubspec_overrides.yaml
 /.ohos_stub/
