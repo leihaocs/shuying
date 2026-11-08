@@ -51,6 +51,8 @@ def main() -> None:
             "鸿蒙引擎分离须结束等待，旧续体须拒绝重复回复")
     require("bytes.slice(offset, Math.min(offset + 65536, bytes.length))" in ohos,
             "鸿蒙部分写入只复制最多 64 KiB，不能反复复制全部剩余数据")
+    require("call.argument('bytes') as Uint8Array | null" in ohos,
+            "鸿蒙通道二进制参数须显式声明类型，不能隐式推断 Any")
     require("controller.off('dismiss', dismiss)" in ohos,
             "鸿蒙移除分享监听须传入原回调，匹配本机 SDK 的必填参数")
     require("await fs.fsync(file.fd)" in ohos and "finally { await fs.close(file); }" in ohos,

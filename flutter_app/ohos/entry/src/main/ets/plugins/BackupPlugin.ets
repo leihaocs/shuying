@@ -135,7 +135,7 @@ export default class BackupPlugin implements FlutterPlugin, MethodCallHandler {
   }
 
   private binaryBytes(call: MethodCall): Uint8Array {
-    const bytes = call.argument('bytes');
+    const bytes = call.argument('bytes') as Uint8Array | null;
     if (!(bytes instanceof Uint8Array)) throw new Error('未收到二进制文件');
     return bytes;
   }

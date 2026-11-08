@@ -20,9 +20,11 @@ import 'review_regression_test.dart' show harness;
 Future<void> choose(WidgetTester tester, String key, String label) async {
   final control = find.byKey(Key(key));
   await tester.ensureVisible(control);
+  await tester.pumpAndSettle();
   await tester.tap(control);
   await tester.pumpAndSettle();
   await tester.ensureVisible(find.text(label).last);
+  await tester.pumpAndSettle();
   await tester.tap(find.text(label).last);
   await tester.pumpAndSettle();
 }
@@ -257,6 +259,7 @@ void main() {
           await choose(tester, 'rating-filter', '未评分');
           final reset = find.byKey(const Key('reset-library-filters'));
           await tester.ensureVisible(reset);
+          await tester.pumpAndSettle();
           await tester.tap(reset);
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull,

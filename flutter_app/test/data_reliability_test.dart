@@ -68,6 +68,12 @@ class _LargeImportStore extends AppStore {
   Future<bool> flush() async => true;
 }
 
+// 冲突页只验证真实合并和交互；磁盘故障/重试由上面的纯异步测试覆盖。
+class _InMemoryBackupStore extends AppStore {
+  @override
+  Future<bool> flush() async => true;
+}
+
 class _FailRename extends IOOverrides {
   _FailRename(this.path);
   final String path;
@@ -502,17 +508,9 @@ void main() {
   });
 
   testWidgets('冲突页面先展示两端累计，取消不改库，显式选择来源才整书替换', (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    final directory = await Directory.systemTemp.createTemp('conflict-page-');
-    final store = AppStore(dataDirectory: directory.path, seedDemoData: false);
-    addTearDown(() async {
-      await store.flush();
-      store.dispose();
-      await directory.delete(recursive: true);
-    });
-    await store.load();
+    final store = _InMemoryBackupStore();
+    addTearDown(store.dispose);
     store.importJson(_json([_branch('a', 'left', 10)]));
-    await store.flush();
     await tester.pumpWidget(_page(store));
     final field = find.byKey(const Key('backup-import-text'));
     await tester.scrollUntilVisible(field, 250,
@@ -521,6 +519,8 @@ void main() {
     await tester.enterText(
         field, _json([_branch('a', 'right', 20, updatedDay: 2)]));
     tester.testTextInput.hide();
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pumpAndSettle();
     await _tap(tester, '合并导入（保留现有记录）');
     expect(find.text('备份有冲突，尚未修改本机'), findsOneWidget);
     expect(find.textContaining('110 页'), findsOneWidget);
@@ -539,7 +539,6 @@ void main() {
     await tester.tap(find.text('采用导入来源这本书（替换）'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('按选择导入'));
-    await tester.runAsync(() => store.flush());
     await tester.pumpAndSettle();
     expect(store.books.single.rounds.single.pages, 120);
     expect(store.books.single.rounds.single.logs.last.id, 'right-a');

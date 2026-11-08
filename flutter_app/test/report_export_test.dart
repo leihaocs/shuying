@@ -157,40 +157,45 @@ void main() {
     final pending = Completer<bool?>();
     var calls = 0;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(BackupFiles.channel, (_) async {
+        .setMockMethodCallHandler(BackupFiles.channel, (call) async {
+      expect(call.method, 'saveBytes');
       calls++;
-      return calls == 1 ? pending.future : true;
+      if (calls == 1) return await pending.future;
+      return true;
     });
     addTearDown(() => TestDefaultBinaryMessengerBinding
         .instance.defaultBinaryMessenger
         .setMockMethodCallHandler(BackupFiles.channel, null));
     final first = ReportExports.saveImage(oldContext, _png);
-    addTearDown(() async {
-      if (!pending.isCompleted) pending.complete(null);
+    try {
+      await tester.pump();
+      expect(calls, 1);
+
+      late BuildContext newContext;
+      await tester.pumpWidget(MaterialApp(
+          key: const ValueKey('replacement'),
+          home: Builder(builder: (ctx) {
+            newContext = ctx;
+            return const Scaffold();
+          })));
+      expect(oldContext.mounted, isFalse);
+      await ReportExports.saveImage(newContext, _png);
+      expect(calls, 1);
+      pending.complete(true);
       await first;
-    });
-    await tester.pump();
+      await tester.pump();
+      expect(find.text('报告已保存'), findsNothing);
 
-    late BuildContext newContext;
-    await tester.pumpWidget(MaterialApp(
-        key: const ValueKey('replacement'),
-        home: Builder(builder: (ctx) {
-          newContext = ctx;
-          return const Scaffold();
-        })));
-    expect(oldContext.mounted, isFalse);
-    await ReportExports.saveImage(newContext, _png);
-    expect(calls, 1);
-    pending.complete(true);
-    await first;
-    await tester.pump();
-    expect(find.text('报告已保存'), findsNothing);
-
-    await ReportExports.saveImage(newContext, _png);
-    await tester.pump();
-    expect(calls, 2);
-    expect(find.text('报告已保存'), findsOneWidget);
-    expect(tester.takeException(), isNull);
+      await ReportExports.saveImage(newContext, _png);
+      await tester.pump();
+      expect(calls, 2);
+      expect(find.text('报告已保存'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    } finally {
+      if (!pending.isCompleted) pending.complete(null);
+      await tester.pump();
+      await first;
+    }
   });
 
   testWidgets('已退出的调用上下文不生成报告或访问原生保存器', (tester) async {
