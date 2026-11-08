@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/foundation.dart';
@@ -12,12 +14,24 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
   String? price;
   String? message;
   bool _disposed = false;
+  final bool Function()? _hasConsent;
+  final Listenable? _consentChanges;
+  bool _consentGranted = true;
+  int _consentEpoch = 0;
+  int _operation = 0;
+  int _entitlementRevision = 0;
 
-  ProStore() {
+  ProStore({bool Function()? hasConsent, Listenable? consentChanges})
+      : _hasConsent = hasConsent,
+        _consentChanges = consentChanges {
+    _consentGranted = _hasConsent?.call() ?? true;
+    _consentChanges?.addListener(_consentChanged);
     WidgetsBinding.instance.addObserver(this);
     channel.setMethodCallHandler((call) async {
-      if (call.method == 'changed' && call.arguments is bool) {
+      if (_allowed && call.method == 'changed' && call.arguments is bool) {
+        _entitlementRevision++;
         isPro = call.arguments as bool;
+        if (isPro) message = 'Pro 已解锁。';
         _notify();
       }
     });
@@ -29,17 +43,17 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> refresh() async {
-    if (busy) return;
+    if (!_allowed || busy) return;
+    final operation = ++_operation;
     busy = true;
     _notify();
     try {
-      isPro = await channel
-              .invokeMethod<bool>('status')
-              .timeout(const Duration(seconds: 15)) ??
-          false;
+      await _readEntitlement('status');
+      if (!_current(operation)) return;
       final product = await channel
           .invokeMapMethod<String, dynamic>('product')
           .timeout(const Duration(seconds: 15));
+      if (!_current(operation)) return;
       purchasesEnabled = product?['purchasesEnabled'] != false;
       price = purchasesEnabled ? (product?['price'] as String?) : null;
       message = !purchasesEnabled
@@ -48,21 +62,30 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
               ? '购买暂不可用，请稍后重试。基础功能与备份始终免费。'
               : null;
     } catch (_) {
+      if (!_current(operation)) return;
       price = null;
       message = '购买服务暂不可用，请稍后重试。基础功能与备份始终免费。';
     } finally {
-      busy = false;
-      _notify();
+      _finish(operation);
     }
   }
 
   Future<void> buy() async {
-    if (!purchasesEnabled || busy || price == null) return;
+    if (!_allowed || !purchasesEnabled || busy || price == null) return;
+    final operation = ++_operation;
+    final consentEpoch = _consentEpoch;
     busy = true;
     _notify();
     try {
-      final state = await channel.invokeMethod<String>('buy');
-      isPro = await channel.invokeMethod<bool>('status') ?? false;
+      // 等待结束只释放界面；原生交易仍可迟到交付，不能将其当成付款失败。
+      final state =
+          await channel.invokeMethod<String>('buy').then((state) async {
+        if (_allowed && consentEpoch == _consentEpoch) {
+          await _readEntitlement('status');
+        }
+        return state;
+      }).timeout(const Duration(minutes: 2));
+      if (!_current(operation)) return;
       message = state == 'pending'
           ? '付款待确认，确认后自动解锁。'
           : state == 'cancelled'
@@ -71,26 +94,70 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
                   ? 'Pro 已解锁。'
                   : '购买未确认，请重试或恢复购买。';
     } catch (_) {
-      message = '购买未完成，请重试或恢复购买。';
+      if (!_current(operation)) return;
+      message = isPro ? 'Pro 已解锁。' : '付款结果尚未确认，请稍后刷新商店状态或恢复购买，避免重复付款。';
     } finally {
-      busy = false;
-      _notify();
+      _finish(operation);
     }
   }
 
   Future<void> restore() async {
-    if (!purchasesEnabled || busy) return;
+    if (!_allowed || !purchasesEnabled || busy) return;
+    final operation = ++_operation;
     busy = true;
     _notify();
     try {
-      isPro = await channel.invokeMethod<bool>('restore') ?? false;
+      await _readEntitlement('restore');
+      if (!_current(operation)) return;
       message = isPro ? '购买已恢复。' : '当前商店账号没有可恢复的 Pro 购买。';
     } catch (_) {
-      message = '恢复失败，请检查网络和商店账号后重试。';
+      if (!_current(operation)) return;
+      message = isPro ? 'Pro 已解锁。' : '恢复结果尚未确认，请检查网络和商店账号后重试。';
     } finally {
-      busy = false;
-      _notify();
+      _finish(operation);
     }
+  }
+
+  bool get _allowed => !_disposed && _consentGranted;
+  bool _current(int operation) => _allowed && operation == _operation;
+
+  Future<void> _readEntitlement(String method) {
+    final epoch = _consentEpoch;
+    final revision = ++_entitlementRevision;
+    // then 保留在 timeout 之前：迟到的已验证结果仍可恢复权益；更新的
+    // 商店事件或查询优先，旧响应不能覆盖刚完成的购买或退款。
+    return channel.invokeMethod<bool>(method).then((value) {
+      if (_allowed &&
+          epoch == _consentEpoch &&
+          revision == _entitlementRevision) {
+        isPro = value ?? false;
+        if (isPro) message = 'Pro 已解锁。';
+        _notify();
+      }
+    }).timeout(const Duration(seconds: 15));
+  }
+
+  void _consentChanged() {
+    final consent = _hasConsent?.call() ?? true;
+    if (consent == _consentGranted) return;
+    _consentGranted = consent;
+    _consentEpoch++;
+    _operation++;
+    busy = false;
+    // AppStore 的通知也可能发生在构建期间，不同步通知另一个 Provider。
+    scheduleMicrotask(() {
+      if (_allowed) {
+        refresh();
+      } else {
+        _notify();
+      }
+    });
+  }
+
+  void _finish(int operation) {
+    if (!_current(operation)) return;
+    busy = false;
+    _notify();
   }
 
   void _notify() {
@@ -100,6 +167,7 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
   @override
   void dispose() {
     _disposed = true;
+    _consentChanges?.removeListener(_consentChanged);
     channel.setMethodCallHandler(null);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();

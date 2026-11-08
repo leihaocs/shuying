@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>书影温故 · 读过的书，看过的影</title>
+<meta name="description" content="书影温故网 —— 读过的书，看过的影，值得再温一遍。记录阅读与观影的私人书影档案。">
+<meta name="keywords" content="书影温故,书单,影单,读书笔记,观影记录">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23a8442a'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='%23fdfaf3' font-family='serif'%3E温%3C/text%3E%3C/svg%3E">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root {
+    --paper: #f7f4ee;
+    --ink: #2b2723;
+    --ink-soft: #6b6259;
+    --ink-faint: #9a9089;
+    --accent: #a8442a;
+    --rule: #e2dbd0;
+  }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: Georgia, "Songti SC", "SimSun", "PingFang SC", "Microsoft YaHei", serif;
+    line-height: 1.85;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  .wrap {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 28px;
+    flex: 1 0 auto;
+  }
+
+  /* ---- 头部 ---- */
+  header {
+    padding: 84px 0 0;
+    text-align: center;
+  }
+  .mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 24px;
+    letter-spacing: 0;
+    margin-bottom: 26px;
+  }
+  h1 {
+    font-size: 34px;
+    font-weight: 400;
+    letter-spacing: 8px;
+    margin: 0 0 14px;
+    text-indent: 8px;
+  }
+  .latin {
+    font-size: 11px;
+    letter-spacing: 3.5px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    font-family: "Helvetica Neue", Arial, sans-serif;
+    margin: 0 0 30px;
+  }
+  .lede {
+    font-size: 16px;
+    color: var(--ink-soft);
+    margin: 0 auto;
+    max-width: 30em;
+  }
+  .rule {
+    width: 44px;
+    height: 1px;
+    background: var(--rule);
+    border: 0;
+    margin: 46px auto;
+  }
+
+  /* ---- 三栏 ---- */
+  .cols {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    text-align: center;
+    margin-bottom: 14px;
+  }
+  .col h2 {
+    font-size: 15px;
+    font-weight: 400;
+    letter-spacing: 3px;
+    margin: 0 0 10px;
+    color: var(--ink);
+  }
+  .col p {
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--ink-soft);
+    margin: 0;
+  }
+
+  /* ---- 说明段 ---- */
+  .about {
+    margin-top: 52px;
+    padding-top: 34px;
+    border-top: 1px solid var(--rule);
+    font-size: 14px;
+    color: var(--ink-soft);
+    text-align: justify;
+  }
+  .about p { margin: 0 0 14px; }
+  .about p:last-child { margin-bottom: 0; }
+
+  /* ---- 页脚 ---- */
+  footer {
+    flex-shrink: 0;
+    margin-top: 76px;
+    padding: 26px 28px 34px;
+    border-top: 1px solid var(--rule);
+    text-align: center;
+    font-family: "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  }
+  .copy {
+    font-size: 12px;
+    color: var(--ink-faint);
+    letter-spacing: .5px;
+    margin: 0 0 8px;
+  }
+  .icp {
+    font-size: 12px;
+    margin: 0;
+    color: var(--ink-faint);
+  }
+  .icp a {
+    color: var(--ink-faint);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: color .2s, border-color .2s;
+  }
+  .icp a:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .police-filing { margin-top: 8px; }
+  .police-filing a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .police-filing img { flex-shrink: 0; }
+
+  @media (max-width: 600px) {
+    header { padding-top: 60px; }
+    h1 { font-size: 27px; letter-spacing: 6px; text-indent: 6px; }
+    .lede { font-size: 15px; }
+    .cols {
+      grid-template-columns: 1fr;
+      gap: 26px;
+    }
+    .about { text-align: left; }
+    footer { margin-top: 56px; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="mark">温</div>
+      <h1>书影温故</h1>
+      <p class="latin">Books &amp; Films, Revisited</p>
+      <p class="lede">读过的书，看过的影，值得再温一遍。</p>
+      <hr class="rule">
+    </header>
+
+    <main>
+      <div class="cols">
+        <div class="col">
+          <h2>书</h2>
+          <p>读过的、在读的、想读的。<br>留下批注与摘抄。</p>
+        </div>
+        <div class="col">
+          <h2>影</h2>
+          <p>院线的、屏幕的。<br>记下看过之后的余味。</p>
+        </div>
+        <div class="col">
+          <h2>故</h2>
+          <p>隔些时日回头再看，<br>同一本书、同一部片子。</p>
+        </div>
+      </div>
+
+      <section class="about">
+        <p>「温故」不是重读一遍内容，是带着后来的自己再看一次。同一本书在二十岁和三十岁读，读到的从来不是同一本；同一部电影隔十年重看，笑点和眼泪的位置都变了。</p>
+        <p>这里用来存放这些变化——读过的书，看过的影，以及它们在不同年纪里留下的不同痕迹。</p>
+      </section>
+    </main>
+  </div>
+
+  <footer>
+    <p class="copy">© 2026 书影温故网</p>
+    <p class="icp">
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026143055号-3</a>
+    </p>
+    <p class="icp police-filing">
+      <a href="https://beian.mps.gov.cn/#/query/webSearch?code=44030002019153" target="_blank" rel="noopener noreferrer"><img src="/beian.png" alt="公安备案" width="20" height="20"><span>粤公网安备44030002019153号</span></a>
+    </p>
+  </footer>
+</body>
+</html>

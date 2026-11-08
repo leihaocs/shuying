@@ -11,6 +11,7 @@ import '../widgets/sheets.dart' show pickDayOnly;
 import 'book_detail_page.dart';
 import 'home_shell.dart';
 import 'movie_detail_page.dart';
+import 'monthly_review_page.dart';
 
 const List<String> _weekLabels = ['日', '一', '二', '三', '四', '五', '六'];
 
@@ -251,6 +252,19 @@ class _StatsPageState extends State<StatsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    key: const Key('open-monthly-review'),
+                    icon: const Icon(Icons.calendar_month_outlined, size: 18),
+                    label: const Text('月度回顾'),
+                    onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                            builder: (_) => MonthlyReviewPage(
+                                includeBooks: showBooks,
+                                includeMovies: showMovies))),
+                  ),
+                ),
                 if (showBooks)
                   StatGrid(
                     cells: [

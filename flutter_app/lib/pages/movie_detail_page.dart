@@ -8,6 +8,7 @@ import '../store/app_store.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bits.dart';
 import '../widgets/sheets.dart';
+import 'revisit_comparison_page.dart';
 
 class MovieDetailPage extends StatelessWidget {
   const MovieDetailPage({super.key, required this.movieId});
@@ -153,6 +154,15 @@ class MovieDetailPage extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: 24),
+                  if (watches.length > 1)
+                    TextButton.icon(
+                        onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                                builder: (_) => RevisitComparisonPage(
+                                    movieId: movie.id, preview: true))),
+                        icon: const Icon(Icons.compare_arrows_rounded),
+                        label: const Text('历次观影对照')),
                   SectionTitle(
                     '观影记录',
                     trailing: Text(

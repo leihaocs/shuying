@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../domain/period_review.dart';
 import '../services/pro_store.dart';
+import '../store/app_store.dart';
 import '../widgets/bits.dart';
+import 'advanced_review_page.dart';
 import 'year_review_page.dart';
 
 class ProPage extends StatefulWidget {
@@ -22,12 +25,15 @@ class _ProPageState extends State<ProPage> {
   @override
   Widget build(BuildContext context) {
     final pro = context.watch<ProStore>();
+    final store = context.watch<AppStore?>();
+    final hasRecords =
+        store != null && latestReviewDate(store.books, store.movies) != null;
     return Scaffold(
       appBar: AppBar(title: const Text('书影温故 Pro')),
       body: SafeArea(
           top: false,
           child: ListView(padding: const EdgeInsets.all(20), children: [
-            Text(pro.isPro ? '你的年度书影档案已解锁' : '让每一次阅读与观影都有回顾',
+            Text(pro.isPro ? '你的深度书影档案已解锁' : '让每一次阅读与观影都有回顾',
                 style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 20),
             // Column is not const in the older HarmonyOS Flutter SDK.
@@ -39,26 +45,33 @@ class _ProPageState extends State<ProPage> {
                     children: [
                   const Text('普通版 · 免费'),
                   const SizedBox(height: 8),
-                  const Text('不限量书籍与电影、多轮记录、基础统计、明暗主题、JSON 文件导出和合并导入。'),
+                  const Text(
+                      '不限量书籍与电影、多轮记录、搜索与基础筛选、基础统计、月度回顾、基础分享卡片、明暗主题、JSON 文件导出和合并导入。'),
                   const SizedBox(height: 20),
                   Text(pro.purchasesEnabled ? 'Pro · 一次购买' : 'Pro · 功能介绍'),
                   const SizedBox(height: 8),
                   const Text(
-                      '按年份查看阅读时长、页数、完成次数、阅读天数、观影次数与平均评分；12 个月趋势，复制年度回顾。'),
+                      '年度 12 个月趋势、任选日期范围汇总、跨年对比；同一本书多轮阅读、同一电影历次评分与感想对照；完整回顾可复制、保存图片和 PDF。'),
                 ])),
             const SizedBox(height: 16),
             Text(pro.purchasesEnabled
                 ? '购买适用于当前商店账号支持的设备，不包含跨系统会员、云同步或订阅。记录备份可在三端免费迁移。'
-                : '当前版本暂未开放 Pro 购买，可预览示例年度回顾。基础记录、统计与备份功能免费使用。'),
+                : '当前渠道暂未开放 Pro 购买，可预览深度回顾。有记录时使用你的真实数据，没有记录时年度页会明确标注示例。基础记录、统计与备份功能免费使用。'),
             const SizedBox(height: 20),
-            if (pro.isPro)
+            if (pro.isPro) ...[
               ElevatedButton(
                   onPressed: () => Navigator.push(
                       context,
                       MaterialPageRoute<void>(
                           builder: (_) => const YearReviewPage())),
-                  child: const Text('查看我的年度回顾'))
-            else ...[
+                  child: const Text('查看我的年度回顾')),
+              OutlinedButton(
+                  onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                          builder: (_) => const AdvancedReviewPage())),
+                  child: const Text('日期范围、跨年与历次对照')),
+            ] else ...[
               if (pro.purchasesEnabled)
                 ElevatedButton(
                     onPressed: pro.busy || pro.price == null ? null : pro.buy,
@@ -72,7 +85,14 @@ class _ProPageState extends State<ProPage> {
                       context,
                       MaterialPageRoute<void>(
                           builder: (_) => const YearReviewPage(preview: true))),
-                  child: const Text('预览示例年度回顾')),
+                  child: Text(hasRecords ? '预览我的年度回顾' : '预览示例年度回顾')),
+              TextButton(
+                  onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                          builder: (_) =>
+                              const AdvancedReviewPage(preview: true))),
+                  child: const Text('预览日期范围、跨年与历次对照')),
             ],
             if (pro.purchasesEnabled)
               TextButton(

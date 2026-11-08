@@ -18,6 +18,17 @@ int? checkedRating(int? rating) {
   return rating;
 }
 
+/// 标签保留显示写法，匹配和去重不区分英文大小写。
+List<String> normalizeTags(Iterable<String> tags) {
+  final seen = <String>{};
+  return List<String>.unmodifiable(tags
+      .map((tag) => tag.trim())
+      .where((tag) => tag.isNotEmpty && seen.add(tag.toLowerCase())));
+}
+
+List<String> parseTags(String text) =>
+    normalizeTags(text.split(RegExp('[,，]')));
+
 DateTime _parseDate(dynamic v) {
   if (v is! String) return DateTime.now();
   return DateTime.tryParse(v)?.toLocal() ?? DateTime.now();
@@ -169,6 +180,7 @@ class Book {
     this.accent = 0xFFB4552D,
     this.note,
     this.rating,
+    this.tags = const <String>[],
     required this.createdAt,
     required this.updatedAt,
     this.rounds = const <ReadingRound>[],
@@ -192,6 +204,7 @@ class Book {
 
   /// 全书评分，1～10 分；null 表示未评分。
   final int? rating;
+  final List<String> tags;
 
   final String? note;
   final DateTime createdAt;
@@ -207,6 +220,7 @@ class Book {
     String? cover,
     int? accent,
     Object? rating = kUnset,
+    List<String>? tags,
     Object? note = kUnset,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -223,6 +237,7 @@ class Book {
         cover: cover ?? this.cover,
         accent: accent ?? this.accent,
         rating: identical(rating, kUnset) ? this.rating : rating as int?,
+        tags: tags ?? this.tags,
         note: identical(note, kUnset) ? this.note : note as String?,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
@@ -238,6 +253,7 @@ class Book {
         'cover': cover,
         'accent': accent,
         if (rating != null) 'rating': rating,
+        if (tags.isNotEmpty) 'tags': tags,
         if (note != null) 'note': note,
         'createdAt': isoOf(createdAt),
         'updatedAt': isoOf(updatedAt),
@@ -253,6 +269,8 @@ class Book {
         cover: (j['cover'] as String?) ?? '📖',
         accent: (j['accent'] as num?)?.toInt() ?? 0xFFB4552D,
         rating: (j['rating'] as num?)?.toInt(),
+        tags: normalizeTags(
+            (j['tags'] as List<dynamic>? ?? const []).cast<String>()),
         note: j['note'] as String?,
         createdAt: _parseDate(j['createdAt']),
         updatedAt: _parseDate(j['updatedAt']),
@@ -313,6 +331,7 @@ class Movie {
     this.director = '',
     this.year,
     this.note,
+    this.tags = const <String>[],
     required this.createdAt,
     required this.updatedAt,
     this.watches = const <WatchRecord>[],
@@ -323,6 +342,7 @@ class Movie {
   final String director;
   final String? year;
   final String? note;
+  final List<String> tags;
   final DateTime createdAt;
   final DateTime updatedAt;
   final List<WatchRecord> watches;
@@ -333,6 +353,7 @@ class Movie {
     String? director,
     Object? year = kUnset,
     Object? note = kUnset,
+    List<String>? tags,
     DateTime? createdAt,
     DateTime? updatedAt,
     List<WatchRecord>? watches,
@@ -343,6 +364,7 @@ class Movie {
         director: director ?? this.director,
         year: identical(year, kUnset) ? this.year : year as String?,
         note: identical(note, kUnset) ? this.note : note as String?,
+        tags: tags ?? this.tags,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
         watches: watches ?? this.watches,
@@ -354,6 +376,7 @@ class Movie {
         'director': director,
         if (year != null) 'year': year,
         if (note != null) 'note': note,
+        if (tags.isNotEmpty) 'tags': tags,
         'createdAt': isoOf(createdAt),
         'updatedAt': isoOf(updatedAt),
         'watches': watches.map((w) => w.toJson()).toList(),
@@ -365,6 +388,8 @@ class Movie {
         director: (j['director'] ?? '') as String,
         year: j['year'] as String?,
         note: j['note'] as String?,
+        tags: normalizeTags(
+            (j['tags'] as List<dynamic>? ?? const []).cast<String>()),
         createdAt: _parseDate(j['createdAt']),
         updatedAt: _parseDate(j['updatedAt']),
         watches: ((j['watches'] as List<dynamic>?) ?? const [])

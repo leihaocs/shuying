@@ -63,25 +63,16 @@ class SettingsPage extends StatelessWidget {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
               children: [
-                if (pro.isPro || pro.purchasesEnabled)
-                  CardBox(
-                      child: _TapRow(
-                    icon: Icons.auto_awesome,
-                    title: 'Pro · 高级功能',
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute<void>(
-                            builder: (_) => const ProPage())),
-                  ))
-                else
-                  const CardBox(
-                      child: ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: Icon(Icons.auto_awesome),
-                    title: Text('更多高级功能待开发'),
-                    subtitle: Text('基础记录、统计和备份均可免费使用'),
-                  )),
+                CardBox(
+                    child: _TapRow(
+                  icon: Icons.auto_awesome,
+                  title: pro.isPro || pro.purchasesEnabled
+                      ? 'Pro · 高级功能'
+                      : '高级功能预览',
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(context,
+                      MaterialPageRoute<void>(builder: (_) => const ProPage())),
+                )),
                 const SizedBox(height: 18),
                 const _SectionHeader('外观'),
                 CardBox(

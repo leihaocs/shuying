@@ -23,7 +23,6 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider<ProStore>(create: (_) => ProStore()..refresh()),
         ChangeNotifierProvider<AppStore>(
           create: (_) {
             final store = AppStore(seedDemoData: kScreenshotMode ? true : null);
@@ -34,6 +33,13 @@ void main() {
             return store;
           },
         ),
+        ChangeNotifierProvider<ProStore>(create: (context) {
+          final store = context.read<AppStore>();
+          return ProStore(
+            hasConsent: () => store.privacyConsent,
+            consentChanges: store,
+          )..refresh();
+        }),
       ],
       child: const ShuYingApp(),
     ),
@@ -92,14 +98,45 @@ class _AppEntry extends StatelessWidget {
     }
     if (store.loadFailed) {
       return Scaffold(
-          body: Center(
-              child: Padding(
+          body: SafeArea(
+              child: Center(
+                  child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(store.storageError!),
-          ElevatedButton(onPressed: store.load, child: const Text('重新读取')),
+          ElevatedButton(
+              onPressed: store.restoringPrevious ? null : store.load,
+              child: const Text('重新读取')),
+          if (store.canRestorePrevious)
+            OutlinedButton(
+                key: const Key('restore-previous-state'),
+                onPressed: store.restoringPrevious
+                    ? null
+                    : () async {
+                        final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                                  title: const Text('恢复上次成功保存的副本？'),
+                                  content: const Text(
+                                      '副本可能不包含最近的修改。当前无法读取的原文件会另行保留；确认后用副本恢复本机记录。'),
+                                  actions: [
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: const Text('取消')),
+                                    TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, true),
+                                        child: const Text('保留原件并恢复')),
+                                  ],
+                                ));
+                        if (confirm == true && context.mounted) {
+                          await store.restorePrevious();
+                        }
+                      },
+                child: Text(store.restoringPrevious ? '正在恢复…' : '恢复上次成功保存的副本')),
         ]),
-      )));
+      ))));
     }
     if (!store.privacyConsent) {
       return const PrivacyConsentGate();

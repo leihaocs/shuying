@@ -9,7 +9,7 @@ import 'package:shuying/store/app_store.dart';
 import 'package:shuying/theme/app_theme.dart';
 
 void main() {
-  testWidgets('高级入口集中设置：未开放时显示待开发，统计不展示付费入口', (tester) async {
+  testWidgets('高级入口集中设置：未开放时可预览，统计不展示付费入口', (tester) async {
     var purchasesEnabled = false;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(ProStore.channel, (call) async {
@@ -42,14 +42,14 @@ void main() {
       ));
       await tester.pumpAndSettle();
       expect(find.textContaining('Pro'), findsNothing);
-      expect(find.text('更多高级功能待开发'),
+      expect(find.text('高级功能预览'),
           page is SettingsPage ? findsOneWidget : findsNothing);
       purchasesEnabled = true;
       await pro.refresh();
       await tester.pumpAndSettle();
       expect(find.textContaining('Pro'),
           page is SettingsPage ? findsOneWidget : findsNothing);
-      expect(find.text('更多高级功能待开发'), findsNothing);
+      expect(find.text('高级功能预览'), findsNothing);
     }
     await tester.pumpWidget(const SizedBox());
   });

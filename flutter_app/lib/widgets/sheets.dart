@@ -512,6 +512,7 @@ class _BookFormState extends State<_BookForm> {
   late final TextEditingController _edition;
   late final TextEditingController _pages;
   late final TextEditingController _note;
+  late final TextEditingController _tags;
   late String _cover;
   late int _accent;
   int? _rating;
@@ -530,6 +531,7 @@ class _BookFormState extends State<_BookForm> {
     _edition = TextEditingController(text: b?.edition ?? '');
     _pages = TextEditingController(text: b?.totalPages?.toString() ?? '');
     _note = TextEditingController(text: b?.note ?? '');
+    _tags = TextEditingController(text: b?.tags.join(', ') ?? '');
     _cover = b?.cover ?? '📖';
     _accent = b?.accent ?? kAccents.first;
     _rating = b?.rating;
@@ -542,6 +544,7 @@ class _BookFormState extends State<_BookForm> {
     _edition.dispose();
     _pages.dispose();
     _note.dispose();
+    _tags.dispose();
     _readPages.dispose();
     _readMinutes.dispose();
     super.dispose();
@@ -566,9 +569,10 @@ class _BookFormState extends State<_BookForm> {
       accent: _accent,
       rating: _rating,
       note: _note.text,
+      tags: parseTags(_tags.text),
     );
-    if (widget.existing == null) {
-      try {
+    try {
+      if (widget.existing == null) {
         store.addBook(input,
             initialStatus: _initialStatus,
             readPages: _initialStatus == BookStatus.reading
@@ -577,12 +581,12 @@ class _BookFormState extends State<_BookForm> {
             readMinutes: _initialStatus == BookStatus.reading
                 ? parseIntOrNull(_readMinutes.text)
                 : null);
-      } on ArgumentError catch (error) {
-        setState(() => _statusErr = error.message?.toString() ?? '请检查阅读信息');
-        return;
+      } else {
+        store.updateBook(widget.existing!.id, input);
       }
-    } else {
-      store.updateBook(widget.existing!.id, input);
+    } on ArgumentError catch (error) {
+      setState(() => _statusErr = error.message?.toString() ?? '请检查阅读信息');
+      return;
     }
     Navigator.of(context).pop(true);
   }
@@ -627,6 +631,7 @@ class _BookFormState extends State<_BookForm> {
               Field(
                 label: '总页数',
                 optional: true,
+                error: widget.existing != null ? _statusErr : null,
                 hint: '填了之后，可以用「读了多少页」自动估算进度',
                 child: NumberField(
                   controller: _pages,
@@ -666,6 +671,16 @@ class _BookFormState extends State<_BookForm> {
                   decoration: const InputDecoration(
                     hintText: '为什么想读它？',
                   ),
+                ),
+              ),
+              Field(
+                label: '标签',
+                optional: true,
+                hint: '多个标签用逗号分隔，例如：小说，收藏',
+                child: TextField(
+                  key: const Key('book-tags'),
+                  controller: _tags,
+                  decoration: const InputDecoration(hintText: '例如：小说，收藏'),
                 ),
               ),
               if (widget.existing == null) ...[
@@ -1156,6 +1171,7 @@ class _MovieFormState extends State<_MovieForm> {
   late final TextEditingController _director;
   late final TextEditingController _year;
   late final TextEditingController _note;
+  late final TextEditingController _tags;
   String? _titleErr;
 
   @override
@@ -1166,6 +1182,7 @@ class _MovieFormState extends State<_MovieForm> {
     _director = TextEditingController(text: m?.director ?? '');
     _year = TextEditingController(text: m?.year ?? '');
     _note = TextEditingController(text: m?.note ?? '');
+    _tags = TextEditingController(text: m?.tags.join(', ') ?? '');
   }
 
   @override
@@ -1174,6 +1191,7 @@ class _MovieFormState extends State<_MovieForm> {
     _director.dispose();
     _year.dispose();
     _note.dispose();
+    _tags.dispose();
     super.dispose();
   }
 
@@ -1191,6 +1209,7 @@ class _MovieFormState extends State<_MovieForm> {
       director: director,
       year: _year.text,
       note: _note.text,
+      tags: parseTags(_tags.text),
     );
     if (widget.existing == null) {
       store.addMovie(input);
@@ -1244,6 +1263,16 @@ class _MovieFormState extends State<_MovieForm> {
                   controller: _note,
                   maxLines: 3,
                   decoration: const InputDecoration(hintText: '想看的原因？'),
+                ),
+              ),
+              Field(
+                label: '标签',
+                optional: true,
+                hint: '多个标签用逗号分隔，例如：剧情，收藏',
+                child: TextField(
+                  key: const Key('movie-tags'),
+                  controller: _tags,
+                  decoration: const InputDecoration(hintText: '例如：剧情，收藏'),
                 ),
               ),
             ],

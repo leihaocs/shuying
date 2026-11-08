@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../domain/period_review.dart';
 import '../domain/year_review.dart';
 import '../services/pro_store.dart';
 import '../store/app_store.dart';
 import '../widgets/bits.dart';
+import '../widgets/review_export_actions.dart';
+import 'advanced_review_page.dart';
 import 'pro_page.dart';
 
 class YearReviewPage extends StatefulWidget {
@@ -15,51 +17,58 @@ class YearReviewPage extends StatefulWidget {
 }
 
 class _YearReviewPageState extends State<YearReviewPage> {
-  int year = DateTime.now().year;
+  int? _year;
   @override
   Widget build(BuildContext context) {
     final pro = context.watch<ProStore>();
     final store = context.watch<AppStore>();
     if (!widget.preview && !pro.isPro) return const ProPage();
-    final review = YearReview(store.books, store.movies, year);
-    final years = <int>{
-      DateTime.now().year,
-      for (final b in store.books)
-        for (final r in b.rounds) ...[
-          if (r.finishedAt != null) r.finishedAt!.year,
-          for (final l in r.logs) l.at.year,
-        ],
-      for (final m in store.movies)
-        for (final w in m.watches) w.at.year,
-    }.toList()
-      ..sort((a, b) => b.compareTo(a));
+    final preview = !pro.isPro;
+    final latest = latestReviewDate(store.books, store.movies);
+    final sample = preview && latest == null;
+    final year = (preview ? null : _year) ??
+        (preview ? latest?.year ?? DateTime.now().year : DateTime.now().year);
+    final books = sample ? sampleReviewBooks(year) : store.books;
+    final movies = sample ? sampleReviewMovies(year) : store.movies;
+    final review = YearReview(books, movies, year);
+    final years = reviewYears(books, movies);
     if (!years.contains(year)) years.add(year);
-    final minutes = widget.preview ? 3600 : review.minutes;
-    final pages = widget.preview ? 2400 : review.pages;
-    final readTimes = widget.preview ? 12 : review.readTimes;
-    final readingDays = widget.preview ? 90 : review.readingDays;
-    final watches = widget.preview ? 24 : review.watchTimes;
-    final rating = widget.preview
-        ? '9.0'
-        : review.averageRating?.toStringAsFixed(1) ?? '—';
-    final text = '$year 年书影温故\n阅读 $readTimes 次 · $pages 页 · $minutes 分钟\n'
-        '阅读 $readingDays 天 · 观影 $watches 次 · 平均评分 $rating/10';
+    final minutes = review.minutes;
+    final pages = review.pages;
+    final readTimes = review.readTimes;
+    final readingDays = review.readingDays;
+    final watches = review.watchTimes;
+    final rating = review.averageRating?.toStringAsFixed(1) ?? '—';
+    final text = '读完 $readTimes 次 · 阅读 $pages 页 · $minutes 分钟\n'
+        '阅读 $readingDays 天 · 观影 $watches 次 · 观影均分 $rating/10\n'
+        '涉及书籍 ${review.bookCount} 本 · 电影 ${review.movieCount} 部\n'
+        '每月阅读分钟 / 观影次数\n'
+        '${List.generate(12, (month) => '${month + 1} 月：${review.monthlyMinutes[month]} 分钟 / ${review.monthlyWatches[month]} 次').join('\n')}\n'
+        '累计校正按本轮结束或最近记录日期归属，不与单次量重复计算。';
     return Scaffold(
-      appBar: AppBar(title: Text(widget.preview ? '示例年度回顾' : '年度书影回顾')),
+      appBar: AppBar(
+          title: Text(sample
+              ? '示例年度回顾'
+              : preview
+                  ? '我的年度回顾 · 预览'
+                  : '年度书影回顾')),
       body: SafeArea(
           top: false,
           child: ListView(padding: const EdgeInsets.all(20), children: [
-            if (widget.preview) const Text('以下为示例数据，不是你的记录。'),
+            if (sample)
+              const Text('你还没有阅读或观影记录。以下为示例数据，不是你的记录，也不会写入本机。')
+            else if (preview)
+              const Text('以下预览来自你的真实记录，默认展示最近有记录的年份。Pro 可切换年份并保存完整报告。'),
             DropdownButton<int>(
                 value: year,
                 items: [
                   for (final y in years)
                     DropdownMenuItem(value: y, child: Text('$y 年'))
                 ],
-                onChanged: widget.preview
+                onChanged: preview
                     ? null
                     : (v) {
-                        if (v != null) setState(() => year = v);
+                        if (v != null) setState(() => _year = v);
                       }),
             const SizedBox(height: 12),
             StatGrid(cells: [
@@ -72,7 +81,7 @@ class _YearReviewPageState extends State<YearReviewPage> {
             StatGrid(cells: [
               StatCell(value: '$readingDays', label: '阅读天数'),
               StatCell(value: '$watches', label: '观影次数'),
-              StatCell(value: rating, label: '平均分 /10')
+              StatCell(value: rating, label: '观影均分 /10')
             ]),
             const SizedBox(height: 24),
             const Text('12 个月阅读与观影'),
@@ -89,28 +98,24 @@ class _YearReviewPageState extends State<YearReviewPage> {
                           runSpacing: 4,
                           children: [
                             Text('${month + 1} 月'),
-                            Text(
-                                '${widget.preview ? (month + 1) * 30 : review.monthlyMinutes[month]} 分钟 · '
-                                '${widget.preview ? 2 : review.monthlyWatches[month]} 次观影')
+                            Text('${review.monthlyMinutes[month]} 分钟 · '
+                                '${review.monthlyWatches[month]} 次观影')
                           ]),
                       const SizedBox(height: 4),
                       LinearProgressIndicator(
-                          value: widget.preview
-                              ? (month + 1) / 12
-                              : _ratio(review.monthlyMinutes, month)),
+                          value: _ratio(review.monthlyMinutes, month)),
                     ])),
             ])),
             const SizedBox(height: 20),
-            ElevatedButton(
-                onPressed: widget.preview
-                    ? null
-                    : () async {
-                        await Clipboard.setData(ClipboardData(text: text));
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('年度回顾已复制')));
-                      },
-                child: const Text('复制年度回顾')),
+            ReviewExportActions(
+                title: '$year 年书影温故', body: text, preview: preview),
+            const SizedBox(height: 12),
+            OutlinedButton(
+                onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(
+                        builder: (_) => AdvancedReviewPage(preview: preview))),
+                child: const Text('任选时间范围与跨年对比')),
           ])),
     );
   }

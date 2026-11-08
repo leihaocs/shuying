@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../domain/books.dart' show bookSummary;
+import '../domain/fmt.dart' show formatDateTime;
+import '../models/models.dart';
 import '../store/app_store.dart';
+import '../services/backup_codec.dart';
 import '../services/backup_files.dart';
 import '../theme/app_theme.dart';
 import '../widgets/bits.dart';
 
 /// 数据备份与恢复：把全部记录导出成 JSON 文本，或粘贴 JSON 文本导入。
 ///
-/// 三端 JSON 文件迁移，也保留文本复制；仅合并，不提供覆盖导入。
+/// 三端 JSON 文件迁移；有冲突时逐书预览，由用户明确选择来源。
 class DataBackupPage extends StatefulWidget {
   const DataBackupPage({super.key});
 
@@ -20,6 +24,9 @@ class DataBackupPage extends StatefulWidget {
 class _DataBackupPageState extends State<DataBackupPage> {
   final TextEditingController _importCtrl = TextEditingController();
   String _exported = '';
+  String? _selectedFile;
+  bool _largeFileApproved = false;
+  bool _busy = false;
 
   @override
   void dispose() {
@@ -46,27 +53,165 @@ class _DataBackupPageState extends State<DataBackupPage> {
   }
 
   Future<void> _doImport() async {
-    final text = _importCtrl.text.trim();
+    if (_busy) return;
+    final text = (_selectedFile ?? _importCtrl.text).trim();
     if (text.isEmpty) {
       _msg('请先粘贴备份文本');
       return;
     }
+    setState(() => _busy = true);
     try {
-      final n = context.read<AppStore>().importJson(text);
+      final store = context.read<AppStore>();
+      final allowLarge = _selectedFile != null && _largeFileApproved;
+      Map<String, int> n;
+      try {
+        n = store.importJson(text, allowLarge: allowLarge);
+      } on BackupTooLargeException {
+        if (!await _confirmLargeImport() || !mounted) return;
+        n = await _importWithConflicts(store, text, allowLarge: true);
+      } on BackupConflictException catch (error) {
+        n = await _resolveImport(store, text, error, allowLarge: allowLarge);
+      }
       final nb = n['books'] ?? 0;
       final nm = n['movies'] ?? 0;
-      if (!await context.read<AppStore>().flush()) {
+      if (!await store.flush()) {
         throw StateError('合并完成但保存失败，请重试保存并保留原备份');
       }
       if (!mounted) return;
-      _msg('合并完成：书籍 $nb 条、电影 $nm 条，现有记录已保留');
+      _msg('已处理备份：书籍 $nb 条、电影 $nm 条；冲突书籍按你的选择保留');
       _importCtrl.clear();
-      setState(() => _exported = '');
+      setState(() {
+        _exported = '';
+        _selectedFile = null;
+        _largeFileApproved = false;
+      });
+    } on _ImportCancelled {
+      // 取消预览不会提交任何部分，也不会清空待导入内容。
     } catch (e) {
       if (!mounted) return;
       _msg('导入失败：$e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
+
+  Future<Map<String, int>> _importWithConflicts(AppStore store, String text,
+      {required bool allowLarge}) async {
+    try {
+      return store.importJson(text, allowLarge: allowLarge);
+    } on BackupConflictException catch (error) {
+      return _resolveImport(store, text, error, allowLarge: allowLarge);
+    }
+  }
+
+  Future<Map<String, int>> _resolveImport(
+      AppStore store, String text, BackupConflictException error,
+      {required bool allowLarge}) async {
+    final choices = {
+      for (final conflict in error.conflicts)
+        conflict.bookId: BackupConflictResolution.keepLocal
+    };
+    final source = _selectedFile == null ? '粘贴的备份文本' : '刚选择的 JSON 文件';
+    final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => StatefulBuilder(
+            builder: (context, update) => AlertDialog(
+                  title: const Text('备份有冲突，尚未修改本机'),
+                  content: SizedBox(
+                    width: 480,
+                    child: SingleChildScrollView(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('导入来源：$source。请逐本选择；其他书籍和电影仍正常合并。'),
+                            const SizedBox(height: 8),
+                            const Text(
+                                '选择“导入来源”会替换这本书的全部资料、标签、轮次与明细，本机独有内容将不再保留。请先导出本机备份。'),
+                            TextButton(
+                                onPressed: () async {
+                                  try {
+                                    final saved = await BackupFiles.save(
+                                        store.exportJson());
+                                    if (mounted) {
+                                      _msg(saved ? '本机备份已导出' : '未导出备份');
+                                    }
+                                  } catch (_) {
+                                    if (mounted) _msg('备份导出失败，请取消处理后重试');
+                                  }
+                                },
+                                child: const Text('先导出本机 JSON（免费）')),
+                            for (final conflict in error.conflicts) ...[
+                              const Divider(),
+                              Text(conflict.incoming.title,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold)),
+                              Text(conflict.reason),
+                              const SizedBox(height: 8),
+                              Text('本机：${_bookSnapshot(conflict.local)}'),
+                              Text('来源：${_bookSnapshot(conflict.incoming)}'),
+                              // 保留旧 Radio API 以兼容 OHOS Flutter 3.7。
+                              RadioListTile<BackupConflictResolution>(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(conflict.local == null
+                                      ? '跳过这本书'
+                                      : '保留本机这本书'),
+                                  value: BackupConflictResolution.keepLocal,
+                                  // ignore: deprecated_member_use
+                                  groupValue: choices[conflict.bookId],
+                                  // ignore: deprecated_member_use
+                                  onChanged: (value) => update(
+                                      () => choices[conflict.bookId] = value!)),
+                              RadioListTile<BackupConflictResolution>(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: const Text('采用导入来源这本书（替换）'),
+                                  value: BackupConflictResolution.useIncoming,
+                                  // ignore: deprecated_member_use
+                                  groupValue: choices[conflict.bookId],
+                                  // ignore: deprecated_member_use
+                                  onChanged: (value) => update(
+                                      () => choices[conflict.bookId] = value!)),
+                            ],
+                          ]),
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                        onPressed: () => Navigator.pop(dialogContext, false),
+                        child: const Text('取消')),
+                    ElevatedButton(
+                        onPressed: () => Navigator.pop(dialogContext, true),
+                        child: const Text('按选择导入')),
+                  ],
+                )));
+    if (confirmed != true || !mounted) throw const _ImportCancelled();
+    return store.importJson(text, allowLarge: allowLarge, resolutions: choices);
+  }
+
+  String _bookSnapshot(Book? book) {
+    if (book == null) return '没有这本书';
+    final summary = bookSummary(book);
+    return '《${book.title}》，${book.rounds.length} 轮、${summary.totalLogs} 条明细，'
+        '${summary.totalPages} 页、${summary.totalMinutes} 分钟；'
+        '更新于 ${formatDateTime(book.updatedAt)}';
+  }
+
+  Future<bool> _confirmLargeImport() async =>
+      await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+                title: const Text('允许导入超过 20 MB 的备份？'),
+                content: const Text(
+                    '仅打开你信任的书影温故 JSON 备份。大文件会占用较多内存，可能需要较长时间；请先备份当前记录，导入时不要关闭应用。此操作免费，仅对这次选择或粘贴的内容放开大小保护，仍会校验数据和冲突。'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('取消')),
+                  ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('确认导入大文件')),
+                ],
+              )) ??
+      false;
 
   Future<void> _saveFile() async {
     try {
@@ -79,14 +224,23 @@ class _DataBackupPageState extends State<DataBackupPage> {
     }
   }
 
-  Future<void> _openFile() async {
+  Future<void> _openFile({bool allowLarge = false}) async {
+    if (_busy) return;
+    if (allowLarge && (!await _confirmLargeImport() || !mounted)) return;
+    setState(() => _busy = true);
     try {
-      final text = await BackupFiles.open();
+      final text = await BackupFiles.open(allowLarge: allowLarge);
       if (!mounted || text == null) return;
-      _importCtrl.text = text;
+      _importCtrl.clear();
+      setState(() {
+        _selectedFile = text;
+        _largeFileApproved = allowLarge;
+      });
       _msg('已读取文件，请点击合并导入');
     } catch (_) {
-      if (mounted) _msg('无法读取文件，请选择不超过 20 MB 的 JSON 备份');
+      if (mounted) _msg('无法读取文件。超过 20 MB 时，可确认后使用“大文件”入口重新选择；请保留原备份。');
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -110,8 +264,10 @@ class _DataBackupPageState extends State<DataBackupPage> {
                   child: Text(
                     '当前共 $total 条记录（书籍 ${store.books.length} · '
                     '电影 ${store.movies.length}）。\n'
-                    'iOS、安卓与鸿蒙共用 JSON 备份。导入只合并、不清空，'
+                    'iOS、安卓与鸿蒙共用 JSON 备份。默认合并、不清空，'
                     '同 ID 的轮次与记录去重；同名但不同 ID 的条目分别保留。'
+                    '出现冲突时先预览，只有明确选择导入来源才会替换该书。'
+                    '新版备份需在支持标签的新版应用中导入，仍可导入旧备份。'
                     '卸载前请备份，'
                     '建议定期导出一份存到备忘录或网盘。',
                     style: TextStyle(fontSize: 13, height: 1.6, color: c.text2),
@@ -139,26 +295,29 @@ class _DataBackupPageState extends State<DataBackupPage> {
                       ),
                       if (_exported.isNotEmpty) ...[
                         const SizedBox(height: 12),
-                        Container(
-                          height: 180,
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: c.surface2,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: c.border),
-                          ),
-                          child: SingleChildScrollView(
-                            child: SelectableText(
-                              _exported,
-                              style: TextStyle(
-                                fontSize: 11,
-                                height: 1.45,
-                                color: c.text2,
-                                fontFamily: 'monospace',
+                        if (_exported.length > 20000)
+                          const Text('备份较大，不展开全文。请复制完整内容或导出 JSON 文件。')
+                        else
+                          Container(
+                            height: 180,
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: c.surface2,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: c.border),
+                            ),
+                            child: SingleChildScrollView(
+                              child: SelectableText(
+                                _exported,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  height: 1.45,
+                                  color: c.text2,
+                                  fontFamily: 'monospace',
+                                ),
                               ),
                             ),
                           ),
-                        ),
                         const SizedBox(height: 10),
                         _actionButton(
                           c,
@@ -168,7 +327,9 @@ class _DataBackupPageState extends State<DataBackupPage> {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          '长按上面的文本也能选中复制。',
+                          _exported.length > 20000
+                              ? '复制和文件导出均保留全部内容。'
+                              : '长按上面的文本也能选中复制。',
                           style: TextStyle(fontSize: 11, color: c.text3),
                         ),
                       ],
@@ -187,39 +348,59 @@ class _DataBackupPageState extends State<DataBackupPage> {
                       _actionButton(c,
                           icon: Icons.folder_open,
                           label: '选择 JSON 文件',
-                          onTap: _openFile),
+                          onTap: _busy ? null : () => _openFile()),
+                      _actionButton(c,
+                          icon: Icons.file_open_outlined,
+                          label: '选择大文件（超过 20 MB，需确认）',
+                          onTap:
+                              _busy ? null : () => _openFile(allowLarge: true)),
                       const SizedBox(height: 12),
-                      TextField(
-                        controller: _importCtrl,
-                        minLines: 4,
-                        maxLines: 8,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: c.text,
-                          fontFamily: 'monospace',
-                        ),
-                        decoration: InputDecoration(
-                          hintText: '把之前导出的 JSON 文本粘贴到这里',
-                          hintStyle: TextStyle(fontSize: 12, color: c.text3),
-                          filled: true,
-                          fillColor: c.surface2,
-                          contentPadding: const EdgeInsets.all(10),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: c.border),
+                      if (_selectedFile != null) ...[
+                        Text(
+                            '已读取 JSON 文件（${_selectedFile!.length} 个字符），为避免卡顿不展开全文。'),
+                        TextButton(
+                            onPressed: _busy
+                                ? null
+                                : () => setState(() {
+                                      _selectedFile = null;
+                                      _largeFileApproved = false;
+                                    }),
+                            child: const Text('改用粘贴文本')),
+                      ] else
+                        TextField(
+                          key: const Key('backup-import-text'),
+                          enabled: !_busy,
+                          controller: _importCtrl,
+                          minLines: 4,
+                          maxLines: 8,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: c.text,
+                            fontFamily: 'monospace',
                           ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide(color: c.border, width: 1.5),
+                          decoration: InputDecoration(
+                            hintText: '把之前导出的 JSON 文本粘贴到这里',
+                            hintStyle: TextStyle(fontSize: 12, color: c.text3),
+                            filled: true,
+                            fillColor: c.surface2,
+                            contentPadding: const EdgeInsets.all(10),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide(color: c.border),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  BorderSide(color: c.border, width: 1.5),
+                            ),
                           ),
                         ),
-                      ),
                       const SizedBox(height: 12),
                       _actionButton(
                         c,
                         icon: Icons.merge_type_rounded,
                         label: '合并导入（保留现有记录）',
-                        onTap: _doImport,
+                        onTap: _busy ? null : _doImport,
                       ),
                     ],
                   ),
@@ -250,7 +431,7 @@ class _DataBackupPageState extends State<DataBackupPage> {
     AppColors c, {
     required IconData icon,
     required String label,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
     bool destructive = false,
   }) {
     final color = destructive ? c.danger : c.text;
@@ -274,4 +455,8 @@ class _DataBackupPageState extends State<DataBackupPage> {
       ),
     );
   }
+}
+
+class _ImportCancelled implements Exception {
+  const _ImportCancelled();
 }

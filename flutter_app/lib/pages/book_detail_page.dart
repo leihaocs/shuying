@@ -9,6 +9,7 @@ import '../theme/app_theme.dart';
 import '../widgets/bits.dart';
 import '../widgets/progress_ring.dart';
 import '../widgets/sheets.dart';
+import 'revisit_comparison_page.dart';
 
 class BookDetailPage extends StatelessWidget {
   const BookDetailPage({super.key, required this.bookId});
@@ -97,6 +98,15 @@ class BookDetailPage extends StatelessWidget {
                   ],
                   const SizedBox(height: 16),
                   _Actions(book: book, active: active, status: status),
+                  if (book.rounds.length > 1)
+                    TextButton.icon(
+                        onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute<void>(
+                                builder: (_) => RevisitComparisonPage(
+                                    bookId: book.id, preview: true))),
+                        icon: const Icon(Icons.compare_arrows_rounded),
+                        label: const Text('历次阅读对照')),
                   const SizedBox(height: 24),
                   SectionTitle(
                     '阅读轮次',

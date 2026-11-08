@@ -13,5 +13,6 @@ class BackupFiles {
         false;
   }
 
-  static Future<String?> open() => channel.invokeMethod<String>('open');
+  static Future<String?> open({bool allowLarge = false}) =>
+      channel.invokeMethod<String>('open', {'allowLarge': allowLarge});
 }

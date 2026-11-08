@@ -41,7 +41,7 @@ void main() {
     store.addWatch('old', at: now, rating: 3);
     final book = store.addBook(BookInput(title: '十分制书籍', rating: 9));
     final backup = store.exportJson();
-    expect(jsonDecode(backup)['schema'], 2);
+    expect(jsonDecode(backup)['schema'], 3);
     final restored = decodeBackup(backup);
     expect(restored.movies.single.watches.map((w) => w.rating), [8, 3]);
     expect(restored.books.single.rating, 9);
@@ -135,7 +135,8 @@ void main() {
     store.addWatch(repeated.id, at: DateTime(2025), rating: 9);
     store.addWatch(repeated.id, at: DateTime(2026), rating: 8);
     store.addWatch(once.id, at: DateTime(2026));
-    await tester.pumpWidget(harness(const MoviesPage(), store, pro));
+    await tester
+        .pumpWidget(harness(const Scaffold(body: MoviesPage()), store, pro));
     await tester.tap(find.text('已看'));
     await tester.pumpAndSettle();
     expect(find.text('重看电影'), findsNothing);
@@ -178,6 +179,8 @@ void main() {
             .byWidgetPredicate(
                 (w) => w is Scrollable && w.axisDirection == AxisDirection.down)
             .first);
+    await tester.ensureVisible(find.text('昨天'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('昨天'));
     await tester.pumpAndSettle();
     expect(find.text(formatDate(yesterday)), findsOneWidget);

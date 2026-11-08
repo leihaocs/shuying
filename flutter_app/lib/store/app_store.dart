@@ -27,6 +27,7 @@ class BookInput {
     this.accent,
     this.note,
     this.rating,
+    this.tags,
   });
 
   final String title;
@@ -37,6 +38,7 @@ class BookInput {
   final int? accent;
   final String? note;
   final int? rating;
+  final List<String>? tags;
 }
 
 class MovieInput {
@@ -45,12 +47,14 @@ class MovieInput {
     this.director = '',
     this.year,
     this.note,
+    this.tags,
   });
 
   final String title;
   final String director;
   final String? year;
   final String? note;
+  final List<String>? tags;
 }
 
 class LogInput {
@@ -106,7 +110,7 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
   static const String _kTheme = 'shuying.theme.v1';
   static const String _kPrivacy = 'shuying.privacy.v1';
   static const String _kPrivacyVersion = 'shuying.privacy.version';
-  static const String privacyVersion = '2026-10-02';
+  static const String privacyVersion = '2026-11-07';
 
   final List<Book> _books = <Book>[];
   final List<Movie> _movies = <Movie>[];
@@ -127,6 +131,8 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
   SharedPreferences? _prefs;
   String? storageError;
   bool loadFailed = false;
+  bool canRestorePrevious = false;
+  bool restoringPrevious = false;
   bool _disposed = false;
   bool _purgeDeletedData = false;
   int _savingJobs = 0;
@@ -147,6 +153,7 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
   /* ---------------- 读写 ---------------- */
 
   Future<void> load() async {
+    canRestorePrevious = false;
     try {
       _prefs = await SharedPreferences.getInstance();
       final theme = _prefs!.getString(_kTheme);
@@ -181,10 +188,58 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
     } catch (_) {
       loadFailed = true;
       storageError = '本机记录读取失败，原数据已保留。请重试，勿卸载应用。';
+      try {
+        canRestorePrevious = _stateFile != null &&
+            await File('${_stateFile!.path}.previous').exists();
+      } catch (_) {
+        // 无法检查恢复副本时仍保留原始读取失败状态。
+      }
     }
     _ready = true;
     notifyListeners();
     if (!loadFailed) _schedulePersist();
+  }
+
+  /// 仅由用户确认后调用；先保存损坏原件，再原子恢复上次成功副本。
+  Future<bool> restorePrevious() async {
+    if (!loadFailed || !canRestorePrevious || restoringPrevious) return false;
+    restoringPrevious = true;
+    notifyListeners();
+    try {
+      await _saveQueue;
+      final file = _stateFile!;
+      final previous = File('${file.path}.previous');
+      final raw = await previous.readAsString();
+      decodeBackup(raw, legacy: true);
+      final damaged = File(
+          '${file.path}.damaged-${DateTime.now().microsecondsSinceEpoch}.json');
+      if (await file.exists()) {
+        await file.copy(damaged.path);
+        final preserved = await damaged.open(mode: FileMode.append);
+        try {
+          await preserved.flush();
+        } finally {
+          await preserved.close();
+        }
+      } else {
+        final legacyRaw = _prefs?.getString(_kState);
+        if (legacyRaw != null) {
+          await damaged.writeAsString(legacyRaw, flush: true);
+        }
+      }
+      final temporary = File('${file.path}.recovery.tmp');
+      await temporary.writeAsString(raw, flush: true);
+      await temporary.rename(file.path);
+      await load();
+      return !loadFailed;
+    } catch (_) {
+      loadFailed = true;
+      storageError = '恢复未完成，原件与上次副本已保留。请保留文件并联系支持，勿卸载应用。';
+      return false;
+    } finally {
+      restoringPrevious = false;
+      if (!_disposed) notifyListeners();
+    }
   }
 
   Future<bool> _shouldSeedDemoData() async {
@@ -218,12 +273,29 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
         final temporary = File('${file.path}.tmp');
         await temporary.writeAsString(snapshot, flush: true);
         if (!purgeDeletedData && await file.exists()) {
-          await file.copy('${file.path}.previous');
+          // 副本也先完整写入再替换，复制中断不能损坏已有的恢复副本。
+          final previousTemporary = File('${file.path}.previous.tmp');
+          await file.copy(previousTemporary.path);
+          final handle = await previousTemporary.open(mode: FileMode.append);
+          try {
+            await handle.flush();
+          } finally {
+            await handle.close();
+          }
+          await previousTemporary.rename('${file.path}.previous');
         }
         await temporary.rename(file.path);
         if (purgeDeletedData) {
           final previous = File('${file.path}.previous');
           if (await previous.exists()) await previous.delete();
+          await for (final entry in file.parent.list(followLinks: false)) {
+            if (entry is File &&
+                (entry.path.startsWith('${file.path}.damaged-') ||
+                    entry.path == '${file.path}.previous.tmp' ||
+                    entry.path == '${file.path}.recovery.tmp')) {
+              await entry.delete();
+            }
+          }
           // 先覆写空值，避免原生异步删除尚未落盘时旧记录仍能恢复。
           if (_prefs!.containsKey(_kState)) {
             if (!await _prefs!.setString(_kState, '{"books":[],"movies":[]}') ||
@@ -270,7 +342,7 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
   String exportJson() {
     final data = <String, dynamic>{
       'app': 'bookmovie_revisit',
-      'schema': 2,
+      'schema': 3,
       'exportedAt': isoOf(DateTime.now()),
       'books': _books.map((b) => b.toJson()).toList(),
       'movies': _movies.map((m) => m.toJson()).toList(),
@@ -279,10 +351,13 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   /// 跨端合并：按稳定 ID 合并书籍、轮次、日志与观影记录，不传播删除。
-  Map<String, int> importJson(String text) {
+  Map<String, int> importJson(String text,
+      {bool allowLarge = false,
+      Map<String, BackupConflictResolution> resolutions = const {}}) {
     if (loadFailed) throw StateError('请先解决本机读取错误');
-    final incoming = decodeBackup(text);
-    final merged = mergeBackup(_books, _movies, incoming);
+    final incoming = decodeBackup(text, allowLarge: allowLarge);
+    final merged =
+        mergeBackup(_books, _movies, incoming, resolutions: resolutions);
     _books
       ..clear()
       ..addAll(merged.books);
@@ -402,6 +477,7 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
       author: input.author.trim(),
       edition: _nullIfBlank(input.edition),
       rating: checkedRating(input.rating),
+      tags: normalizeTags(input.tags ?? const []),
       totalPages: input.totalPages,
       cover: input.cover ?? '📖',
       accent: input.accent ?? 0xFFB4552D,
@@ -417,16 +493,24 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
 
   void updateBook(String id, BookInput input) => _patchBook(
         id,
-        (b) => b.copyWith(
-          title: input.title.trim(),
-          author: input.author.trim(),
-          edition: _nullIfBlank(input.edition),
-          rating: checkedRating(input.rating),
-          totalPages: input.totalPages,
-          cover: input.cover ?? b.cover,
-          accent: input.accent ?? b.accent,
-          note: _nullIfBlank(input.note),
-        ),
+        (b) {
+          final updated = b.copyWith(
+            title: input.title.trim(),
+            author: input.author.trim(),
+            edition: _nullIfBlank(input.edition),
+            rating: checkedRating(input.rating),
+            tags: input.tags == null ? b.tags : normalizeTags(input.tags!),
+            totalPages: input.totalPages,
+            cover: input.cover ?? b.cover,
+            accent: input.accent ?? b.accent,
+            note: _nullIfBlank(input.note),
+          );
+          // 总页数会重新推导自动进度，资料编辑同样不能制造进度倒退。
+          for (final round in updated.rounds.where((round) => round.isActive)) {
+            _checkProgresses(updated, sortedLogs(round));
+          }
+          return updated;
+        },
       );
 
   void removeBook(String id) {
@@ -552,9 +636,11 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
           if (end != null && end.isBefore(startedAt)) {
             throw ArgumentError('结束时间不能早于开始时间');
           }
-          if (round.isActive &&
-              round.logs.any((log) => log.at.isBefore(startedAt))) {
+          if (round.logs.any((log) => log.at.isBefore(startedAt))) {
             throw ArgumentError('开始时间不能晚于本轮最早阅读记录');
+          }
+          if (end != null && round.logs.any((log) => log.at.isAfter(end))) {
+            throw ArgumentError('结束时间不能早于本轮最后阅读记录');
           }
           return round.copyWith(
               startedAt: startedAt,
@@ -644,6 +730,7 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
       director: input.director.trim(),
       year: _nullIfBlank(input.year),
       note: _nullIfBlank(input.note),
+      tags: normalizeTags(input.tags ?? const []),
       createdAt: now,
       updatedAt: now,
     );
@@ -659,6 +746,7 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
           director: input.director.trim(),
           year: _nullIfBlank(input.year),
           note: _nullIfBlank(input.note),
+          tags: input.tags == null ? m.tags : normalizeTags(input.tags!),
         ),
       );
 

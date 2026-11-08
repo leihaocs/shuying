@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>书影温故 · 隐私政策</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0; padding: 24px 20px 56px;
+    font: 15px/1.85 -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+    color: #16181d; background: #f6f7f9;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 6px; letter-spacing: -0.4px; }
+  .meta { font-size: 12.5px; color: #8a8f98; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 14px; padding: 18px 18px 4px; margin-bottom: 16px; }
+  h2 { font-size: 15.5px; margin: 0 0 10px; letter-spacing: -0.2px; }
+  p { margin: 0 0 12px; color: #3d424c; }
+  ul { margin: 0 0 12px; padding-left: 20px; color: #3d424c; }
+  li { margin-bottom: 6px; }
+  .sign { text-align: center; color: #8a8f98; font-size: 12.5px; margin-top: 20px; }
+  @media (prefers-color-scheme: dark) {
+    body { color: #eceef2; background: #101216; }
+    .card { background: #191c21; }
+    p, ul { color: #b6bcc6; }
+    .meta, .sign { color: #7c828d; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>书影温故 · 隐私政策</h1>
+  <div class="meta">生效日期：2026-11-07 · 版本 2026-11-07</div>
+
+  <div class="card">
+    <p>我们非常重视你的隐私。这份政策用通俗的语言告诉你：书影温故会采集什么、不采集什么、你的数据存在哪里、以及你能怎么做。</p>
+  </div>
+
+  <div class="card">
+    <h2>1. 书影记录保存在本机</h2>
+    <p>书影温故不会把阅读和观影记录上传到开发者服务器。书籍、电影、评分和备注保存在这台设备的应用私有 JSON 文件中。</p>
+    <p>开发者无法通过本应用远程读取你的本机书影记录。你主动通过邮件联系支持时，开发者会收到你发送的内容，请勿附上不必要的私人记录。</p>
+  </div>
+
+  <div class="card">
+    <h2>2. 本地记录与购买服务</h2>
+    <p>阅读与观影记录在本机处理，不会自动上传到开发者服务器。购买、恢复购买与查询商品时，应用会连接对应商店的购买服务；购买信息由商店按其隐私政策处理。</p>
+    <p>当前不提供云同步。导出的 JSON 备份包含你的书影记录、评分与备注，请只交给你信任的设备或文件服务。</p>
+    <p>在已开放购买的 Google Play 版本中，为支持已购买用户离线使用，可在本机加密保存已由商店签名并确认的购买凭证，读取时再次校验。凭证不写入记录备份，不上传开发者服务器；离线期间无法实时同步退款或账号切换，后续商店核验成功时更新权益。iOS 权益由系统 StoreKit 的已验证交易提供。</p>
+  </div>
+
+  <div class="card">
+    <h2>3. 基础依赖与第三方服务</h2>
+    <p>书影温故使用 Flutter、provider、shared_preferences 等基础组件；Google Play 版本内置 Play Billing，iOS 使用系统 StoreKit。我们不接入广告、行为分析或推送 SDK，不主动读取位置、通讯录、相机或麦克风内容。仅在对应渠道开放购买且你已同意政策时，应用才通过商店服务核验商品与购买权益；商店可能按其政策处理完成服务所需的账号、设备及交易信息。开发者不接收支付卡号。</p>
+    <p>开发者不将你的书影记录出售或共享给第三方。使用系统文件选择器时，你选择的文件服务可能处理备份；该行为由你主动发起，请参考该服务的隐私政策。</p>
+    <p>你主动保存或分享图片、PDF 回顾时，所选文件服务或接收应用会获得导出的内容。基础月度卡片只含汇总数字，完整报告可能包含书名、片名、评分与感想，请在发送前核对内容。应用不会自动发布回顾。</p>
+  </div>
+
+  <div class="card">
+    <h2>4. 你的数据存在哪里</h2>
+    <p>阅读 / 观影记录保存在应用沙盒内的本地 JSON 文件中，主题和同意标记等偏好通过 shared_preferences 保存，与系统其他 App 完全隔离，操作系统权限会阻止其他 App 读取。</p>
+    <p>卸载可能删除本机数据。当前支持 JSON 文件与文本导出，以及跨端合并导入。请在卸载或更换设备前备份；有完整备份时可重新导入。系统备份行为以设备设置为准。</p>
+  </div>
+
+  <div class="card">
+    <h2>5. 你能做的事</h2>
+    <p>查看与修改：你随时可以在书影温故的「设置」页面访问本政策。</p>
+    <p>清空数据：你可以在「设置 → 清空所有数据」中删除全部本地记录。</p>
+    <p>撤回同意：你可以在「设置 → 撤回隐私政策同意」中清除同意记录，下次启动 App 时将再次显示本政策。</p>
+  </div>
+
+  <div class="card">
+    <h2>6. 权限说明</h2>
+    <p>当前版本不申请相机、麦克风、位置、通讯录或通知等运行时权限。文件导入导出使用系统选择器，只访问你选择的文件。购买服务需要网络及对应商店账号。应用不读取设备标识符用于广告追踪。</p>
+    <p>若未来版本引入需要新增权限的功能，我们会在更新说明中告知，并由你在系统弹窗中自行决定是否授权。</p>
+  </div>
+
+  <div class="card">
+    <h2>7. 儿童隐私</h2>
+    <p>书影温故不针对 14 岁以下儿童设计，也不会主动收集儿童信息。若你为孩子代为使用，请协助其阅读并理解本政策。</p>
+  </div>
+
+  <div class="card">
+    <h2>8. 政策更新</h2>
+    <p>本政策可能随版本更新而修订。版本号会标注在页面顶部，政策版本变化后会重新显示同意页，请你确认。</p>
+  </div>
+
+  <div class="card">
+    <h2>9. 联系我们</h2>
+    <p>如果你对隐私政策有任何疑问或反馈，欢迎联系我们：</p>
+    <ul><li>邮箱：380174722@qq.com</li></ul>
+  </div>
+
+  <div class="sign">— 书影温故团队 · <a href="support.html">帮助与支持</a></div>
+  <div class="sign">官方网站：<a href="https://bookmovie-revisit.cn/">bookmovie-revisit.cn</a> · <a href="https://beian.miit.gov.cn/">粤ICP备2026143055号-3</a></div>
+</div>
+</body>
+</html>
