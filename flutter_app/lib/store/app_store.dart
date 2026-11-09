@@ -110,7 +110,7 @@ class AppStore extends ChangeNotifier with WidgetsBindingObserver {
   static const String _kTheme = 'shuying.theme.v1';
   static const String _kPrivacy = 'shuying.privacy.v1';
   static const String _kPrivacyVersion = 'shuying.privacy.version';
-  static const String privacyVersion = '2026-11-07';
+  static const String privacyVersion = '2026-11-09';
 
   final List<Book> _books = <Book>[];
   final List<Movie> _movies = <Movie>[];

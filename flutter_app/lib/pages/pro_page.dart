@@ -48,15 +48,21 @@ class _ProPageState extends State<ProPage> {
                   const Text(
                       '不限量书籍与电影、多轮记录、搜索与基础筛选、基础统计、月度回顾、基础分享卡片、明暗主题、JSON 文件导出和合并导入。'),
                   const SizedBox(height: 20),
-                  Text(pro.purchasesEnabled ? 'Pro · 一次购买' : 'Pro · 功能介绍'),
+                  Text(pro.sandbox
+                      ? 'Pro · 沙盒测试'
+                      : pro.purchasesEnabled
+                          ? 'Pro · 一次购买'
+                          : 'Pro · 功能介绍'),
                   const SizedBox(height: 8),
                   const Text(
                       '年度 12 个月趋势、任选日期范围汇总、跨年对比；同一本书多轮阅读、同一电影历次评分与感想对照；完整回顾可复制、保存图片和 PDF。'),
                 ])),
             const SizedBox(height: 16),
-            Text(pro.purchasesEnabled
-                ? '购买适用于当前商店账号支持的设备，不包含跨系统会员、云同步或订阅。记录备份可在三端免费迁移。'
-                : '当前渠道暂未开放 Pro 购买，可预览深度回顾。有记录时使用你的真实数据，没有记录时年度页会明确标注示例。基础记录、统计与备份功能免费使用。'),
+            Text(pro.sandbox
+                ? '当前为华为沙盒测试版，不会真实扣款。测试解锁仅在本次前台使用期间有效；切到后台或重启后可能需要重新测试。'
+                : pro.purchasesEnabled
+                    ? '购买适用于当前商店账号支持的设备，不包含跨系统会员、云同步或订阅。记录备份可在三端免费迁移。'
+                    : '当前渠道暂未开放 Pro 购买，可预览深度回顾。有记录时使用你的真实数据，没有记录时年度页会明确标注示例。基础记录、统计与备份功能免费使用。'),
             const SizedBox(height: 20),
             if (pro.isPro) ...[
               ElevatedButton(
@@ -79,7 +85,9 @@ class _ProPageState extends State<ProPage> {
                         ? '正在连接商店…'
                         : pro.price == null
                             ? '购买暂不可用'
-                            : '一次购买解锁 · ${pro.price}')),
+                            : pro.sandbox
+                                ? '沙盒购买测试 · ${pro.price}'
+                                : '一次购买解锁 · ${pro.price}')),
               TextButton(
                   onPressed: () => Navigator.push(
                       context,

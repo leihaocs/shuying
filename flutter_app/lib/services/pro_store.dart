@@ -10,6 +10,7 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
   bool isPro = false;
   // iOS 保留恢复购买入口，其余渠道经原生能力确认后再显示。
   bool purchasesEnabled = defaultTargetPlatform == TargetPlatform.iOS;
+  bool sandbox = false;
   bool busy = false;
   String? price;
   String? message;
@@ -31,7 +32,7 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
       if (_allowed && call.method == 'changed' && call.arguments is bool) {
         _entitlementRevision++;
         isPro = call.arguments as bool;
-        if (isPro) message = 'Pro 已解锁。';
+        message = isPro ? _unlockedMessage : null;
         _notify();
       }
     });
@@ -55,12 +56,16 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
           .timeout(const Duration(seconds: 15));
       if (!_current(operation)) return;
       purchasesEnabled = product?['purchasesEnabled'] != false;
+      sandbox = product?['sandbox'] == true;
       price = purchasesEnabled ? (product?['price'] as String?) : null;
-      message = !purchasesEnabled
-          ? null
-          : price == null
-              ? '购买暂不可用，请稍后重试。基础功能与备份始终免费。'
-              : null;
+      final storeMessage = product?['message'];
+      message = storeMessage is String && storeMessage.isNotEmpty
+          ? storeMessage
+          : !purchasesEnabled
+              ? null
+              : price == null
+                  ? '购买暂不可用，请稍后重试。基础功能与备份始终免费。'
+                  : null;
     } catch (_) {
       if (!_current(operation)) return;
       price = null;
@@ -91,11 +96,11 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
           : state == 'cancelled'
               ? '已取消购买。'
               : isPro
-                  ? 'Pro 已解锁。'
+                  ? _unlockedMessage
                   : '购买未确认，请重试或恢复购买。';
     } catch (_) {
       if (!_current(operation)) return;
-      message = isPro ? 'Pro 已解锁。' : '付款结果尚未确认，请稍后刷新商店状态或恢复购买，避免重复付款。';
+      message = isPro ? _unlockedMessage : '付款结果尚未确认，请稍后刷新商店状态或恢复购买，避免重复付款。';
     } finally {
       _finish(operation);
     }
@@ -109,16 +114,27 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
     try {
       await _readEntitlement('restore');
       if (!_current(operation)) return;
-      message = isPro ? '购买已恢复。' : '当前商店账号没有可恢复的 Pro 购买。';
-    } catch (_) {
+      message = isPro
+          ? sandbox
+              ? '本次沙盒测试权益有效。'
+              : '购买已恢复。'
+          : '当前商店账号没有可恢复的 Pro 购买。';
+    } catch (error) {
       if (!_current(operation)) return;
-      message = isPro ? 'Pro 已解锁。' : '恢复结果尚未确认，请检查网络和商店账号后重试。';
+      message = sandbox &&
+              error is PlatformException &&
+              error.code == 'sandbox_restore_unavailable'
+          ? '华为沙盒不返回已确认发货的买断订单。需在后台清除测试购买历史后重新测试；正式购买不受此沙盒限制。'
+          : isPro
+              ? _unlockedMessage
+              : '恢复结果尚未确认，请检查网络和商店账号后重试。';
     } finally {
       _finish(operation);
     }
   }
 
   bool get _allowed => !_disposed && _consentGranted;
+  String get _unlockedMessage => sandbox ? '本次沙盒测试已解锁。' : 'Pro 已解锁。';
   bool _current(int operation) => _allowed && operation == _operation;
 
   Future<void> _readEntitlement(String method) {
@@ -131,7 +147,7 @@ class ProStore extends ChangeNotifier with WidgetsBindingObserver {
           epoch == _consentEpoch &&
           revision == _entitlementRevision) {
         isPro = value ?? false;
-        if (isPro) message = 'Pro 已解锁。';
+        if (isPro) message = _unlockedMessage;
         _notify();
       }
     }).timeout(const Duration(seconds: 15));

@@ -8,10 +8,11 @@ import util from '@ohos.util';
 import fileuri from '@ohos.file.fileuri';
 import uniformTypeDescriptor from '@ohos.data.uniformTypeDescriptor';
 import systemShare from '@hms.collaboration.systemShare';
+import StorePurchases from './StorePurchases';
 
 export default class BackupPlugin implements FlutterPlugin, MethodCallHandler {
   private channel: MethodChannel | null = null;
-  private purchases: MethodChannel | null = null;
+  private purchases: StorePurchases | null = null;
   private share: MethodChannel | null = null;
   private shareController: systemShare.ShareController | null = null;
   private shareDismiss: (() => void) | null = null;
@@ -27,8 +28,8 @@ export default class BackupPlugin implements FlutterPlugin, MethodCallHandler {
     this.attached = true;
     this.channel = new MethodChannel(binding.getBinaryMessenger(), 'com.bookmovie.revisit/backup');
     this.channel.setMethodCallHandler(this);
-    this.purchases = new MethodChannel(binding.getBinaryMessenger(), 'com.bookmovie.revisit/purchases');
-    this.purchases.setMethodCallHandler(this);
+    this.purchases = new StorePurchases(this.context);
+    this.purchases.attach(binding);
     this.share = new MethodChannel(binding.getBinaryMessenger(), 'com.bookmovie.revisit/share');
     this.share.setMethodCallHandler(this);
   }
@@ -40,22 +41,21 @@ export default class BackupPlugin implements FlutterPlugin, MethodCallHandler {
     this.attached = false;
     pending?.error('file', '文件操作因引擎重建中断，请检查目标文件后重试', null);
     this.channel?.setMethodCallHandler(null);
-    this.purchases?.setMethodCallHandler(null);
+    this.purchases?.detach();
+    this.purchases = null;
     this.share?.setMethodCallHandler(null);
     this.clearShareController();
   }
   onMethodCall(call: MethodCall, result: MethodResult): void {
     this.handle(call, result);
   }
+
+  onForeground(): void { this.purchases?.onForeground(); }
+  onBackground(): void { this.purchases?.onBackground(); }
   private async handle(call: MethodCall, result: MethodResult): Promise<void> {
     if (call.method === 'image') { await this.shareImage(call, result); return; }
     if (call.method === 'seedDemoData') { result.success(false); return; }
     if (call.method === 'supportUrl') { result.success(this.supportUrl); return; }
-    if (call.method === 'status') { result.success(false); return; }
-    if (call.method === 'product') { result.success({ 'purchasesEnabled': false }); return; }
-    if (call.method === 'buy' || call.method === 'restore') {
-      result.error('unavailable', '当前版本未开放购买', null); return;
-    }
     if (call.method === 'openSupport' || call.method === 'openFiling') {
       try {
         const expected = call.method === 'openFiling' ? 'https://beian.miit.gov.cn/' : this.supportUrl;

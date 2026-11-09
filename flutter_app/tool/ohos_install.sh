@@ -4,6 +4,8 @@
 #
 #   ./tool/ohos_install.sh                      安装默认产物
 #   ./tool/ohos_install.sh <xxx.hap>            安装指定 HAP
+#   HDC_TARGET=192.168.3.83:36489 ./tool/ohos_install.sh <xxx.hap>
+#                                             指定已连接的目标
 #
 # 真机准备（只需一次）：
 #   1. 设置 → 关于本机 → 连点「版本号」7 次，打开开发者模式
@@ -29,8 +31,13 @@ HAP="${1:-$APP_DIR/ohos/entry/build/default/outputs/default/entry-default-signed
 python3 "$APP_DIR/tool/check_ohos_hap.py" "$HAP" "$APP_VER_NAME" "$APP_VER_BUILD"
 
 echo "==> 查找设备…"
-TARGETS="$("$HDC" list targets 2>/dev/null | grep -v '^\[Empty\]' | head -1)"
-if [ -z "$TARGETS" ]; then
+if ! TARGET_LIST="$("$HDC" list targets 2>&1)"; then
+  printf '%s\n' "$TARGET_LIST" >&2
+  echo "==> 无法获取鸿蒙设备列表。" >&2
+  exit 1
+fi
+TARGET_LIST="$(printf '%s\n' "$TARGET_LIST" | sed '/^\[Empty\]/d; /^[[:space:]]*$/d')"
+if [ -z "$TARGET_LIST" ]; then
   cat <<'EOF'
 没有检测到鸿蒙设备。请检查：
   1. 手机已用数据线连到 Mac（部分线只能充电）
@@ -39,10 +46,30 @@ if [ -z "$TARGETS" ]; then
 EOF
   exit 1
 fi
-echo "==> 设备：$TARGETS"
+if [ -n "${HDC_TARGET:-}" ]; then
+  if [[ "$HDC_TARGET" == *$'\n'* ]] ||
+    ! printf '%s\n' "$TARGET_LIST" | grep -Fx -- "$HDC_TARGET" >/dev/null; then
+    echo "==> 指定目标未连接：$HDC_TARGET" >&2
+    exit 1
+  fi
+  TARGET="$HDC_TARGET"
+else
+  TARGET="$(printf '%s\n' "$TARGET_LIST" | head -1)"
+fi
+echo "==> 设备：$TARGET"
 
 echo "==> 安装 $(basename "$HAP")"
-"$HDC" -t "$TARGETS" install -r "$HAP"
+INSTALL_STATUS=0
+INSTALL_OUTPUT="$("$HDC" -t "$TARGET" install -r "$HAP" 2>&1)" || INSTALL_STATUS=$?
+printf '%s\n' "$INSTALL_OUTPUT"
+# Some hdc versions return zero even when BundleManager rejected the install.
+# Require the explicit success marker and reject all error/failure output.
+if [ "$INSTALL_STATUS" -ne 0 ] ||
+  printf '%s\n' "$INSTALL_OUTPUT" | grep -Ei '(^|[^[:alpha:]])(error|fail|failed|failure|fatal|timeout)([^[:alpha:]]|$)|timed[[:space:]]+out|connection[[:space:]]+(lost|closed|refused)' >/dev/null ||
+  ! printf '%s\n' "$INSTALL_OUTPUT" | grep -Ei 'install[[:space:]]+bundle[[:space:]]+successfully' >/dev/null; then
+  echo "==> 安装未确认成功（hdc 退出码：$INSTALL_STATUS），未卸载或清空任何数据。" >&2
+  exit 1
+fi
 
 echo "==> 完成，请在手机上手动打开书影温故。查看日志："
-echo "    $HDC -t $TARGETS shell hilog | grep -i flutter"
+echo "    $HDC -t $TARGET shell hilog | grep -i flutter"
